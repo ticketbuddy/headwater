@@ -1,18 +1,36 @@
 defmodule HeadwaterSpring do
-  @moduledoc """
-  Documentation for HeadwaterSpring.
-  """
+  defmodule Request do
+    @enforce_keys [:stream_id, :handler, :wish, :idempotency_key]
+    defstruct @enforce_keys
+  end
 
-  @doc """
-  Hello world.
+  def uuid do
+    UUID.uuid4(:hex)
+  end
 
-  ## Examples
+  defmacro __using__(registry: registry, supervisor: supervisor, event_store: event_store) do
+    quote do
+      @registry unquote(registry)
+      @supervisor unquote(supervisor)
+      @event_store unquote(event_store)
 
-      iex> HeadwaterSpring.hello()
-      :world
+      def handle(request = %Request{}) do
+        %HeadwaterSpring.Stream{
+          id: request.stream_id,
+          handler: request.handler,
+          registry: @registry,
+          supervisor: @supervisor,
+          event_store: @event_store
+        }
+        |> ensure_started()
+        |> HeadwaterSpring.Stream.propose_wish(request.wish, request.idempotency_key)
+      end
 
-  """
-  def hello do
-    :world
+      defp ensure_started(stream) do
+        HeadwaterSpring.Stream.new(stream)
+
+        stream
+      end
+    end
   end
 end

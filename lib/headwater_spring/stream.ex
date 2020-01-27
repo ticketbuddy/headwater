@@ -16,6 +16,14 @@ defmodule HeadwaterSpring.Stream do
     DynamicSupervisor.start_child(stream.supervisor, {__MODULE__, opts})
   end
 
+  def propose_wish(stream, wish, idempotency_key) do
+    GenServer.call(via_tuple(stream), {:wish, stream.id, wish, idempotency_key})
+  end
+
+  def current_state(stream) do
+    GenServer.call(via_tuple(stream), :state)
+  end
+
   defp via_tuple(stream) do
     {:via, Registry, {stream.registry, stream.id}}
   end
@@ -63,7 +71,7 @@ defmodule HeadwaterSpring.Stream do
          {:ok, new_stream_state} <- next_state_for_stream(stream, stream_state, new_event),
          {:ok, latest_event_id} <-
            stream.event_store.commit!(stream_id, last_event_id, new_event, idempotency_key) do
-      updated_state = %{stream_state: new_stream_state, last_event_id: latest_event_id}
+      updated_state = %{stream: stream, stream_state: new_stream_state, last_event_id: latest_event_id}
 
       {:reply, {:ok, {latest_event_id, new_stream_state}}, updated_state}
     else

@@ -23,11 +23,7 @@ defmodule Example.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:headwater_spring, path: "../"},
-      {:jason, "~> 1.1.2"},
-      {:ecto_sql, "~> 3.0"},
-      {:postgrex, ">= 0.0.0"},
-      {:uuid, "~> 1.1"}
+      {:headwater_spring, path: "../"}
     ]
   end
 
