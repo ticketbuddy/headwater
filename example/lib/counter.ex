@@ -1,9 +1,9 @@
 defmodule Example.IncrementCounter do
-  defstruct [:qty]
+  defstruct [:id, :qty]
 end
 
 defmodule Example.CounterIncremented do
-  defstruct [:qty]
+  defstruct [:id, :qty]
 end
 
 defmodule Example.Counter do

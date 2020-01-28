@@ -6,13 +6,8 @@ defmodule Example.HeadwaterSpring do
 end
 
 defmodule Example do
-  def run_test(counter_id) do
-    %HeadwaterSpring.Request{
-      stream_id: counter_id,
-      handler: Example.Counter,
-      wish: %Example.IncrementCounter{qty: 1},
-      idempotency_key: HeadwaterSpring.uuid()
-    }
-    |> Example.HeadwaterSpring.handle()
-  end
+  use HeadwaterSpring.Router, spring: Example.HeadwaterSpring
+
+  defaction(:inc, to: Example.Counter, by_key: :id)
+  defread(:read_counter, to: Example.Counter)
 end
