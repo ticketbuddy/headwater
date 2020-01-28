@@ -8,6 +8,6 @@ end
 defmodule Example do
   use HeadwaterSpring.Router, spring: Example.HeadwaterSpring
 
-  defaction(:inc, to: Example.Counter, by_key: :id)
+  defaction(:inc, to: Example.Counter, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)
 end

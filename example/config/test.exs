@@ -1,5 +1,7 @@
 import Mix.Config
 
+config :logger, level: :warn
+
 config :example, Example.Repo,
   username: "postgres",
   password: "postgres",

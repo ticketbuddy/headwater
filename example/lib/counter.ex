@@ -1,27 +1,27 @@
-defmodule Example.IncrementCounter do
-  defstruct [:id, :qty]
+defmodule Example.Increment do
+  defstruct [:counter_id, :increment_by]
 end
 
-defmodule Example.CounterIncremented do
-  defstruct [:id, :qty]
+defmodule Example.Incremented do
+  defstruct [:counter_id, :increment_by]
 end
 
 defmodule Example.Counter do
   defstruct [:total]
 
   def execute(current_state, wish) do
-    {:ok, %Example.CounterIncremented{qty: wish.qty}}
+    {:ok, %Example.Incremented{increment_by: wish.increment_by}}
   end
 
   def next_state(nil, event) do
     %__MODULE__{
-      total: event.qty
+      total: event.increment_by
     }
   end
 
-  def next_state(%__MODULE__{total: current_qty}, event) do
+  def next_state(%__MODULE__{total: total}, event) do
     %__MODULE__{
-      total: current_qty + event.qty
+      total: total + event.increment_by
     }
   end
 end
