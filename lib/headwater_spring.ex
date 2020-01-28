@@ -14,10 +14,11 @@ defmodule HeadwaterSpring do
     defstruct @enforce_keys
 
     def new({:ok, {latest_event_id, state}}) do
-      %Result{
-        latest_event_id: latest_event_id,
-        state: state
-      }
+      {:ok,
+       %Result{
+         latest_event_id: latest_event_id,
+         state: state
+       }}
     end
 
     # def new({:error, :execute, response}) do

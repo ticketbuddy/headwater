@@ -10,7 +10,7 @@ defmodule HeadwaterSpring.EventStore do
   @type event_ref :: integer()
   @type idempotency_key :: String.t()
 
-  @callback commit!(stream_id, last_event_id, events) :: {:ok, latest_event_id}
+  @callback commit!(stream_id, last_event_id, events, idempotency_key) :: {:ok, latest_event_id}
 
   @callback load(stream_id) :: {:ok, events, last_event_id}
 

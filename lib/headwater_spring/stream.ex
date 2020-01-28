@@ -59,8 +59,12 @@ defmodule HeadwaterSpring.Stream do
   end
 
   @impl true
-  def handle_call(:state, _from, state) do
-    {:reply, state, state}
+  def handle_call(
+        :state,
+        _from,
+        state = %{last_event_id: last_event_id, stream_state: stream_state}
+      ) do
+    {:reply, {:ok, {last_event_id, stream_state}}, state}
   end
 
   def handle_call(
