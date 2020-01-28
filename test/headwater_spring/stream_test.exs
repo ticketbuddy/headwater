@@ -87,4 +87,48 @@ defmodule HeadwaterSpring.StreamTest do
               }} == Stream.handle_call(@msg, @from, @state)
     end
   end
+
+  describe "when handler.execute fails" do
+    test "when has NOT been previously successful" do
+      HeadwaterSpring.HandlerMock
+      |> expect(:execute, fn current_state, event ->
+        {:error, :not_enough_lemonade}
+      end)
+
+      HeadwaterSpring.EventStoreMock
+      |> expect(:has_wish_previously_succeeded?, fn @idempotency_key ->
+        false
+      end)
+
+      assert {:reply, {:error, :execute, {:error, :not_enough_lemonade}}, @state} ==
+               Stream.handle_call(@msg, @from, @state)
+    end
+
+    test "when HAS been previously successful" do
+      HeadwaterSpring.HandlerMock
+      |> expect(:execute, fn current_state, event ->
+        {:error, :execute, :not_enough_lemonade}
+      end)
+
+      HeadwaterSpring.EventStoreMock
+      |> expect(:has_wish_previously_succeeded?, fn @idempotency_key ->
+        true
+      end)
+
+      assert {:reply, {:ok, {3, %FakeApp{}}}, @state} ==
+               Stream.handle_call(@msg, @from, @state)
+    end
+  end
+
+  describe "when handler.next_state fails" do
+    test "returns next_state error" do
+      HeadwaterSpring.HandlerMock
+      |> expect(:next_state, fn current_state, event ->
+        {:error, :not_enough_fanta}
+      end)
+
+      assert {:reply, {:error, :next_state, {:error, :not_enough_fanta}}, @state} ==
+               Stream.handle_call(@msg, @from, @state)
+    end
+  end
 end

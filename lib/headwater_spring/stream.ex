@@ -93,7 +93,7 @@ defmodule HeadwaterSpring.Stream do
 
       error = {:error, :execute, _} ->
         case has_wish_previously_succeeded?(stream, idempotency_key) do
-          true -> {:reply, {:error, :wish_already_completed}, state}
+          true -> {:reply, {:ok, {last_event_id, stream_state}}, state}
           false -> {:reply, error, state}
         end
 
