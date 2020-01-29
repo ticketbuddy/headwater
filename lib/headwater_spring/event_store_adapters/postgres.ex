@@ -24,7 +24,7 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
       end
 
       defp insert_event(stream_id, event, latest_event_id, idempotency_key) do
-        serialised_event = HeadwaterSpring.EventSerializer.serialize(event)
+        serialised_event = EventSerializer.serialize(event)
 
         %{
           event_id: latest_event_id,
@@ -129,7 +129,7 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
           Map.put(
             event_schema,
             :event,
-            HeadwaterSpring.EventSerializer.deserialize(event_schema.event)
+            EventSerializer.deserialize(event_schema.event)
           )
         end)
       end
