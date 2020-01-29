@@ -29,7 +29,8 @@ defmodule HeadwaterSpring.MixProject do
       {:jason, "~> 1.1.2"},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      {:uuid, "~> 1.1"}
+      {:uuid, "~> 1.1"},
+      {:gen_stage, "~> 0.14.3"}
     ]
   end
 end
