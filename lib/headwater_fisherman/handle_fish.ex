@@ -7,15 +7,14 @@ defmodule HeadwaterFisherman.HandleFish do
   end
 
   def init(:ok) do
-    # Starts a permanent subscription to the broadcaster
-    # which will automatically start requesting items.
     {:consumer, :ok, subscribe_to: [HeadwaterFisherman.Fisherman]}
   end
 
   def handle_events(events, _from, state) do
     for event <- events do
-      IO.inspect {self(), event}
+      event.handler.handle_event(event)
     end
+
     {:noreply, [], state}
   end
 end
