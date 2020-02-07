@@ -17,4 +17,6 @@ defmodule HeadwaterSpring.EventStore do
   @callback read_events(from_event_ref: event_ref, limit: integer()) :: events
 
   @callback has_wish_previously_succeeded?(idempotency_key) :: true | false
+
+  @callback bus_has_completed_event_ref(bus_id: String.t(), event_ref: String.t()) :: :ok
 end

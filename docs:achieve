@@ -1,0 +1,6 @@
+# Trying to achieve
+
+1. Decoupled write and read systems.
+2. One stream of events, multiple consumer streams.
+3. Back-pressure when consumers process the events.
+4. Pure function business logic.

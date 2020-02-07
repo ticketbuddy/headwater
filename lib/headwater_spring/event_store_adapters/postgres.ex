@@ -95,6 +95,7 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
         end
       end
 
+      @impl HeadwaterSpring.EventStore
       def bus_has_completed_event_ref(
             bus_id: bus_id,
             event_ref: event_ref
