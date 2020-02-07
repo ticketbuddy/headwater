@@ -1,51 +1,51 @@
 defmodule HeadwaterFisherman.FishermanTest do
   use ExUnit.Case
   alias HeadwaterFisherman.Fisherman.EventHandlerMock
+  alias HeadwaterSpring.EventStoreAdapters.Postgres.HeadwaterEventsSchema
 
   import Mox
   setup :set_mox_global
   setup :verify_on_exit!
 
   setup do
-    HeadwaterFisherman.Fisherman.start_link()
-    HeadwaterFisherman.HandleFish.start_link()
+    FakeApp.EventStoreMock
+    |> expect(:get_next_event_ref, fn _bus_id, _base_event_ref ->
+      1
+    end)
+
+    test_pid = self()
+
+    FakeApp.EventStoreMock
+    |> expect(:bus_has_completed_event_ref, fn _event_ref ->
+      send(test_pid, :bus_has_completed_event_ref)
+      :ok
+    end)
+
+    FakeApp.EventStoreMock
+    |> expect(:read_events, fn _fetch_opts ->
+      [
+        %HeadwaterEventsSchema{
+          event_id: 1,
+          event_ref: 1,
+          stream_id: "game-one",
+          idempotency_key: "f3e9ee81b8cd4283a40a4093b3ed551b",
+          event: ~s({"__struct__":"Elixir.FakeApp.PointScored","game_id":"game-one","value":5})
+        }
+      ]
+    end)
 
     :ok
   end
 
-  describe "when event should be handled" do
-    test "calls the event handle mock" do
-      test_process = self()
+  test "on startup, it checks for events" do
+    FakeApp.PrinterMock
+    |> expect(:handle_event, fn _event, _notes ->
+      :ok
+    end)
 
-      EventHandlerMock
-      |> expect(:handle_event, fn _ ->
-        send(test_process, :test_event_handled)
+    FakeAppFisherman.Producer.start_link([])
+    FakeAppFisherman.Consumer.start_link([])
 
-        :ok
-      end)
-
-      HeadwaterFisherman.Fisherman.sync_notify(%HeadwaterFisherman.Fisherman.Event{
-        event_id: 1,
-        handler: EventHandlerMock
-      })
-
-      assert_receive(:test_event_handled, 200)
-    end
-  end
-
-  describe "when event should not be handled as event_id is not the next event to be handled" do
-    test "the event handler is not called" do
-      test_process = self()
-
-      EventHandlerMock
-      |> expect(:handle_event, 0, fn _ ->
-        flunk("Should not be ran")
-      end)
-
-      HeadwaterFisherman.Fisherman.sync_notify(%HeadwaterFisherman.Fisherman.Event{
-        event_id: 2,
-        handler: EventHandlerMock
-      })
-    end
+    assert_receive(:bus_has_completed_event_ref, 7500)
   end
 end

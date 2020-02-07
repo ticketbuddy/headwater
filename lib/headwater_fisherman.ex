@@ -3,7 +3,12 @@ defmodule HeadwaterFisherman do
   Reading events from an event stream.
   """
 
-  defmacro __using__(from_event_ref: from_event_ref, event_store: event_store, bus_id: bus_id, handlers: handlers) do
+  defmacro __using__(
+             from_event_ref: from_event_ref,
+             event_store: event_store,
+             bus_id: bus_id,
+             handlers: handlers
+           ) do
     quote do
       defmodule Producer do
         use HeadwaterFisherman.Provider,
