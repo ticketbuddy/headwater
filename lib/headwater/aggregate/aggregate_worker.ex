@@ -1,4 +1,4 @@
-defmodule Headwater.Spring.Aggregate do
+defmodule Headwater.Aggregate.AggregateWorker do
   @enforce_keys [:id, :handler, :registry, :supervisor, :event_store]
   defstruct @enforce_keys
 

@@ -1,12 +1,12 @@
-defmodule Example.Headwater.Spring do
-  use Headwater.Spring,
+defmodule Example.Headwater.Aggregate do
+  use Headwater.Aggregate,
     registry: Example.Registry,
     supervisor: Example.AggregateSupervisor,
     event_store: Example.EventStore
 end
 
 defmodule Example do
-  use Headwater.Spring.Router, spring: Example.Headwater.Spring
+  use Headwater.Aggregate.Router, spring: Example.Headwater.Aggregate
 
   defaction(:inc, to: Example.Counter, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)

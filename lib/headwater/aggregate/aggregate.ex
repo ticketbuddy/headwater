@@ -1,4 +1,4 @@
-defmodule Headwater.Spring do
+defmodule Headwater.Aggregate do
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
@@ -44,7 +44,7 @@ defmodule Headwater.Spring do
       @event_store unquote(event_store)
 
       def handle(request = %WriteRequest{}) do
-        %Headwater.Spring.Aggregate{
+        %Headwater.Aggregate.AggregateWorker{
           id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
@@ -52,12 +52,12 @@ defmodule Headwater.Spring do
           event_store: @event_store
         }
         |> ensure_started()
-        |> Headwater.Spring.Aggregate.propose_wish(request.wish, request.idempotency_key)
-        |> Headwater.Spring.Result.new()
+        |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
+        |> Headwater.Aggregate.Result.new()
       end
 
       def read_state(request = %ReadRequest{}) do
-        %Headwater.Spring.Aggregate{
+        %Headwater.Aggregate.AggregateWorker{
           id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
@@ -65,12 +65,12 @@ defmodule Headwater.Spring do
           event_store: @event_store
         }
         |> ensure_started()
-        |> Headwater.Spring.Aggregate.current_state()
-        |> Headwater.Spring.Result.new()
+        |> Headwater.Aggregate.AggregateWorker.current_state()
+        |> Headwater.Aggregate.Result.new()
       end
 
       defp ensure_started(aggregate) do
-        Headwater.Spring.Aggregate.new(aggregate)
+        Headwater.Aggregate.AggregateWorker.new(aggregate)
 
         aggregate
       end

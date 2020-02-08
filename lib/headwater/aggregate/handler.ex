@@ -1,4 +1,4 @@
-defmodule Headwater.Spring.Handler do
+defmodule Headwater.Aggregate.Handler do
   @type completed_event :: any()
   @type reason :: any()
   @type wish :: any()

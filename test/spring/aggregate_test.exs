@@ -1,27 +1,27 @@
-defmodule Headwater.Spring.AggregateTest do
+defmodule Headwater.Aggregate.AggregateTest do
   use ExUnit.Case
-  alias Headwater.Spring.Aggregate
-  alias Headwater.Spring.WriteRequest
+  alias Headwater.Aggregate.AggregateWorker
+  alias Headwater.Aggregate.WriteRequest
 
   import Mox
   setup :set_mox_global
   setup :verify_on_exit!
 
   setup do
-    Mox.stub_with(Headwater.Spring.HandlerMock, Headwater.Spring.HandlerStub)
+    Mox.stub_with(Headwater.Aggregate.HandlerMock, Headwater.Aggregate.HandlerStub)
     :ok
   end
 
-  @aggregate %Headwater.Spring.Aggregate{
+  @aggregate %Headwater.Aggregate.AggregateWorker{
     id: "aggregate-one",
-    handler: Headwater.Spring.HandlerMock,
+    handler: Headwater.Aggregate.HandlerMock,
     registry: :fake_registry,
     supervisor: :fake_supervisor,
     event_store: Headwater.EventStoreMock
   }
 
   test "init/1" do
-    assert {:ok, %{aggregate: @aggregate}} == Aggregate.init(%{aggregate: @aggregate})
+    assert {:ok, %{aggregate: @aggregate}} == AggregateWorker.init(%{aggregate: @aggregate})
   end
 
   describe "handles a new wish" do
@@ -40,14 +40,14 @@ defmodule Headwater.Spring.AggregateTest do
     }
 
     test "when handler execute and next_state succeed" do
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:execute, fn current_state = %FakeApp{}, wish = @wish ->
-        Headwater.Spring.HandlerStub.execute(current_state, wish)
+        Headwater.Aggregate.HandlerStub.execute(current_state, wish)
       end)
 
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:next_state, fn current_state = %FakeApp{}, event = @event ->
-        Headwater.Spring.HandlerStub.next_state(current_state, event)
+        Headwater.Aggregate.HandlerStub.next_state(current_state, event)
       end)
 
       Headwater.EventStoreMock
@@ -58,15 +58,15 @@ defmodule Headwater.Spring.AggregateTest do
       assert {:reply, {:ok, {4, %FakeApp{total: 1}}},
               %{
                 last_event_id: 4,
-                aggregate: %Headwater.Spring.Aggregate{
+                aggregate: %Headwater.Aggregate.AggregateWorker{
                   event_store: Headwater.EventStoreMock,
-                  handler: Headwater.Spring.HandlerMock,
+                  handler: Headwater.Aggregate.HandlerMock,
                   id: "aggregate-one",
                   registry: :fake_registry,
                   supervisor: :fake_supervisor
                 },
                 aggregate_state: %FakeApp{total: 1}
-              }} == Aggregate.handle_call(@msg, @from, @state)
+              }} == AggregateWorker.handle_call(@msg, @from, @state)
     end
 
     test "when wish has already succeeded" do
@@ -78,21 +78,21 @@ defmodule Headwater.Spring.AggregateTest do
       assert {:reply, {:ok, {3, %FakeApp{}}},
               %{
                 last_event_id: 3,
-                aggregate: %Headwater.Spring.Aggregate{
+                aggregate: %Headwater.Aggregate.AggregateWorker{
                   event_store: Headwater.EventStoreMock,
-                  handler: Headwater.Spring.HandlerMock,
+                  handler: Headwater.Aggregate.HandlerMock,
                   id: "aggregate-one",
                   registry: :fake_registry,
                   supervisor: :fake_supervisor
                 },
                 aggregate_state: %FakeApp{}
-              }} == Aggregate.handle_call(@msg, @from, @state)
+              }} == AggregateWorker.handle_call(@msg, @from, @state)
     end
   end
 
   describe "when handler.execute fails" do
     test "when has NOT been previously successful" do
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:execute, fn current_state, event ->
         {:error, :not_enough_lemonade}
       end)
@@ -103,11 +103,11 @@ defmodule Headwater.Spring.AggregateTest do
       end)
 
       assert {:reply, {:error, :execute, {:error, :not_enough_lemonade}}, @state} ==
-               Aggregate.handle_call(@msg, @from, @state)
+               AggregateWorker.handle_call(@msg, @from, @state)
     end
 
     test "when HAS been previously successful" do
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:execute, fn current_state, event ->
         {:error, :execute, :not_enough_lemonade}
       end)
@@ -118,19 +118,19 @@ defmodule Headwater.Spring.AggregateTest do
       end)
 
       assert {:reply, {:ok, {3, %FakeApp{}}}, @state} ==
-               Aggregate.handle_call(@msg, @from, @state)
+               AggregateWorker.handle_call(@msg, @from, @state)
     end
   end
 
   describe "when handler.next_state fails" do
     test "returns next_state error" do
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:next_state, fn current_state, event ->
         {:error, :not_enough_fanta}
       end)
 
       assert {:reply, {:error, :next_state, {:error, :not_enough_fanta}}, @state} ==
-               Aggregate.handle_call(@msg, @from, @state)
+               AggregateWorker.handle_call(@msg, @from, @state)
     end
   end
 
@@ -147,7 +147,7 @@ defmodule Headwater.Spring.AggregateTest do
     end
 
     test "loads events and commits successful event to the event store" do
-      idempotency_key = Headwater.Spring.uuid()
+      idempotency_key = Headwater.Aggregate.uuid()
 
       FakeApp.EventStoreMock
       |> expect(:load, fn "game-one" ->
@@ -162,23 +162,23 @@ defmodule Headwater.Spring.AggregateTest do
         {:ok, 1}
       end)
 
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:execute, fn nil, %FakeApp.ScorePoint{} ->
         {:ok, %FakeApp.PointScored{}}
       end)
 
-      Headwater.Spring.HandlerMock
+      Headwater.Aggregate.HandlerMock
       |> expect(:next_state, fn nil, %FakeApp.PointScored{} ->
         %FakeApp{}
       end)
 
       %WriteRequest{
         aggregate_id: "game-one",
-        handler: Headwater.Spring.HandlerMock,
+        handler: Headwater.Aggregate.HandlerMock,
         wish: %FakeApp.ScorePoint{},
         idempotency_key: idempotency_key
       }
-      |> FakeApp.Headwater.Spring.handle()
+      |> FakeApp.Headwater.Aggregate.handle()
     end
   end
 end
