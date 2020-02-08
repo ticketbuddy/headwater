@@ -1,4 +1,4 @@
-defmodule Headwater.Aggregate do
+defmodule Headwater.AggregateDirectory do
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
@@ -33,10 +33,6 @@ defmodule Headwater.Aggregate do
     # end
   end
 
-  def uuid do
-    UUID.uuid4(:hex)
-  end
-
   defmacro __using__(registry: registry, supervisor: supervisor, event_store: event_store) do
     quote do
       @registry unquote(registry)
@@ -53,7 +49,7 @@ defmodule Headwater.Aggregate do
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
-        |> Headwater.Aggregate.Result.new()
+        |> Headwater.AggregateDirectory.Result.new()
       end
 
       def read_state(request = %ReadRequest{}) do
@@ -66,7 +62,7 @@ defmodule Headwater.Aggregate do
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.current_state()
-        |> Headwater.Aggregate.Result.new()
+        |> Headwater.AggregateDirectory.Result.new()
       end
 
       defp ensure_started(aggregate) do

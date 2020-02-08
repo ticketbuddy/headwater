@@ -18,8 +18,8 @@ defmodule FakeAppListener do
     handlers: [FakeApp.PrinterMock]
 end
 
-defmodule FakeApp.Headwater.Aggregate do
-  use Headwater.Aggregate,
+defmodule FakeApp.Headwater.AggregateDirectory do
+  use Headwater.AggregateDirectory,
     registry: FakeApp.Registry,
     supervisor: FakeApp.AggregateSupervisor,
     event_store: FakeApp.EventStoreMock

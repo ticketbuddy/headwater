@@ -6,7 +6,7 @@ defmodule Headwater.Aggregate.Router do
     end
   end
 
-  alias Headwater.Aggregate.{WriteRequest, ReadRequest}
+  alias Headwater.AggregateDirectory.{WriteRequest, ReadRequest}
 
   defmacro defaction(action, to: aggregate, by_key: key) when is_atom(action) do
     quote do
@@ -15,7 +15,8 @@ defmodule Headwater.Aggregate.Router do
           aggregate_id: Map.get(wish, unquote(key)),
           handler: unquote(aggregate),
           wish: wish,
-          idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.Aggregate.uuid())
+          idempotency_key:
+            Keyword.get(opts, :idempotency_key, Headwater.uuid())
         }
         |> @aggregate.handle()
       end

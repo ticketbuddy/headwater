@@ -1,7 +1,7 @@
 defmodule Headwater.Aggregate.AggregateTest do
   use ExUnit.Case
   alias Headwater.Aggregate.AggregateWorker
-  alias Headwater.Aggregate.WriteRequest
+  alias Headwater.AggregateDirectory.WriteRequest
 
   import Mox
   setup :set_mox_global
@@ -147,7 +147,7 @@ defmodule Headwater.Aggregate.AggregateTest do
     end
 
     test "loads events and commits successful event to the event store" do
-      idempotency_key = Headwater.Aggregate.uuid()
+      idempotency_key = Headwater.uuid()
 
       FakeApp.EventStoreMock
       |> expect(:load, fn "game-one" ->
@@ -178,7 +178,7 @@ defmodule Headwater.Aggregate.AggregateTest do
         wish: %FakeApp.ScorePoint{},
         idempotency_key: idempotency_key
       }
-      |> FakeApp.Headwater.Aggregate.handle()
+      |> FakeApp.Headwater.AggregateDirectory.handle()
     end
   end
 end

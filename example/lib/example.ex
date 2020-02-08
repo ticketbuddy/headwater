@@ -1,5 +1,5 @@
 defmodule Example.Headwater.Aggregate do
-  use Headwater.Aggregate,
+  use Headwater.AggregateDirectory,
     registry: Example.Registry,
     supervisor: Example.AggregateSupervisor,
     event_store: Example.EventStore
