@@ -1,6 +1,6 @@
-defmodule HeadwaterSpring.EventSerializer do
+defmodule EventSerializer do
   @moduledoc """
-  For storage of events into the event store.
+  For the writing and reading of events in the event store.
   """
 
   def serialize(event) do

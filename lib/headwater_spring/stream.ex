@@ -58,6 +58,15 @@ defmodule HeadwaterSpring.Stream do
     {:reply, :ok, state}
   end
 
+  @impl true
+  def handle_call(
+        :state,
+        _from,
+        state = %{last_event_id: last_event_id, stream_state: stream_state}
+      ) do
+    {:reply, {:ok, {last_event_id, stream_state}}, state}
+  end
+
   def handle_call(
         {:wish, stream_id, wish, idempotency_key},
         _from,
@@ -71,16 +80,20 @@ defmodule HeadwaterSpring.Stream do
          {:ok, new_stream_state} <- next_state_for_stream(stream, stream_state, new_event),
          {:ok, latest_event_id} <-
            stream.event_store.commit!(stream_id, last_event_id, new_event, idempotency_key) do
-      updated_state = %{stream: stream, stream_state: new_stream_state, last_event_id: latest_event_id}
+      updated_state = %{
+        stream: stream,
+        stream_state: new_stream_state,
+        last_event_id: latest_event_id
+      }
 
       {:reply, {:ok, {latest_event_id, new_stream_state}}, updated_state}
     else
-      error = {:error, :wish_already_completed} ->
-        {:reply, error, state}
+      {:error, :wish_already_completed} ->
+        {:reply, {:ok, {last_event_id, stream_state}}, state}
 
       error = {:error, :execute, _} ->
         case has_wish_previously_succeeded?(stream, idempotency_key) do
-          true -> {:reply, {:error, :wish_already_completed}, state}
+          true -> {:reply, {:ok, {last_event_id, stream_state}}, state}
           false -> {:reply, error, state}
         end
 

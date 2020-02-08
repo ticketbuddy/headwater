@@ -6,13 +6,24 @@ defmodule Example.HeadwaterSpring do
 end
 
 defmodule Example do
-  def run_test(counter_id) do
-    %HeadwaterSpring.Request{
-      stream_id: counter_id,
-      handler: Example.Counter,
-      wish: %Example.IncrementCounter{qty: 1},
-      idempotency_key: HeadwaterSpring.uuid()
-    }
-    |> Example.HeadwaterSpring.handle()
+  use HeadwaterSpring.Router, spring: Example.HeadwaterSpring
+
+  defaction(:inc, to: Example.Counter, by_key: :counter_id)
+  defread(:read_counter, to: Example.Counter)
+end
+
+defmodule Example.Printer do
+  def handle_event(event, notes) do
+    IO.inspect({event, notes}, label: "printer")
+
+    :ok
   end
+end
+
+defmodule ExampleFisherman do
+  use HeadwaterFisherman,
+    from_event_ref: 0,
+    event_store: Example.EventStore,
+    bus_id: "example_consumer_one",
+    handlers: [Example.Printer]
 end
