@@ -1,7 +1,7 @@
 defmodule Headwater.Aggregate.Router do
-  defmacro __using__(spring: spring) do
+  defmacro __using__(aggregate: aggregate) do
     quote do
-      @spring unquote(spring)
+      @aggregate unquote(aggregate)
       import Headwater.Aggregate.Router, only: [defaction: 2, defread: 2]
     end
   end
@@ -17,7 +17,7 @@ defmodule Headwater.Aggregate.Router do
           wish: wish,
           idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.Aggregate.uuid())
         }
-        |> @spring.handle()
+        |> @aggregate.handle()
       end
     end
   end
@@ -29,7 +29,7 @@ defmodule Headwater.Aggregate.Router do
           aggregate_id: aggregate_id,
           handler: unquote(aggregate)
         }
-        |> @spring.read_state()
+        |> @aggregate.read_state()
       end
     end
   end

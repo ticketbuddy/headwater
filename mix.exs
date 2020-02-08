@@ -1,4 +1,4 @@
-defmodule HeadwaterSpring.MixProject do
+defmodule Headwater.MixProject do
   use Mix.Project
 
   def project do

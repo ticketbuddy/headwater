@@ -6,7 +6,7 @@ defmodule Headwater.Aggregate.RouterTest do
   setup :verify_on_exit!
 
   defmodule FakeRouter do
-    use Headwater.Aggregate.Router, spring: Headwater.AggregateMock
+    use Headwater.Aggregate.Router, aggregate: Headwater.AggregateMock
 
     defaction(:score, to: FakeApp, by_key: :game_id)
     defread(:read_points, to: FakeApp)

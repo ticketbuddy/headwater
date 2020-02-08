@@ -6,7 +6,7 @@ defmodule Example.Headwater.Aggregate do
 end
 
 defmodule Example do
-  use Headwater.Aggregate.Router, spring: Example.Headwater.Aggregate
+  use Headwater.Aggregate.Router, aggregate: Example.Headwater.Aggregate
 
   defaction(:inc, to: Example.Counter, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)
