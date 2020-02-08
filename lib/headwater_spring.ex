@@ -1,4 +1,6 @@
 defmodule HeadwaterSpring do
+  @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
+
   defmodule WriteRequest do
     @enforce_keys [:stream_id, :handler, :wish, :idempotency_key]
     defstruct @enforce_keys

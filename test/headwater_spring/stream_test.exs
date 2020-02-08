@@ -143,10 +143,7 @@ defmodule HeadwaterSpring.StreamTest do
 
       {:ok, _pid} = Supervisor.start_link(children, strategy: :one_for_one)
 
-      %{
-        registry: FakeApp.Registry,
-        supervisor: FakeApp.StreamSupervisor
-      }
+      :ok
     end
 
     test "loads events and commits successful event to the event store" do
