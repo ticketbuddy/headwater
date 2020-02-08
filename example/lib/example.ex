@@ -1,4 +1,4 @@
-defmodule Example.Headwater.Aggregate do
+defmodule Example.Headwater.AggregateDirectory do
   use Headwater.AggregateDirectory,
     registry: Example.Registry,
     supervisor: Example.AggregateSupervisor,
@@ -6,7 +6,7 @@ defmodule Example.Headwater.Aggregate do
 end
 
 defmodule Example do
-  use Headwater.Aggregate.Router, aggregate: Example.Headwater.Aggregate
+  use Headwater.Aggregate.Router, aggregate_directory: Example.Headwater.AggregateDirectory
 
   defaction(:inc, to: Example.Counter, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)
