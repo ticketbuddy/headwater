@@ -52,4 +52,24 @@ defmodule HeadwaterSpring.RouterTest do
               state: %FakeApp{}
             }} == FakeRouter.score(%FakeApp.ScorePoint{}, idempotency_key: "idem-po-54321")
   end
+
+  test "retrieves the current state" do
+    HeadwaterSpringMock
+    |> expect(:read_state, fn %HeadwaterSpring.ReadRequest{
+                                handler: FakeApp,
+                                stream_id: "game-one"
+                              } ->
+      {:ok,
+       %HeadwaterSpring.Result{
+         latest_event_id: 1,
+         state: %FakeApp{}
+       }}
+    end)
+
+    assert {:ok,
+            %HeadwaterSpring.Result{
+              latest_event_id: 1,
+              state: %FakeApp{}
+            }} == FakeRouter.read_points("game-one")
+  end
 end
