@@ -1,8 +1,10 @@
 defmodule HeadwaterSpring.StreamTest do
   use ExUnit.Case
   alias HeadwaterSpring.Stream
+  alias HeadwaterSpring.WriteRequest
 
   import Mox
+  setup :set_mox_global
   setup :verify_on_exit!
 
   setup do
@@ -129,6 +131,57 @@ defmodule HeadwaterSpring.StreamTest do
 
       assert {:reply, {:error, :next_state, {:error, :not_enough_fanta}}, @state} ==
                Stream.handle_call(@msg, @from, @state)
+    end
+  end
+
+  describe "on first stream action" do
+    setup do
+      children = [
+        {Registry, keys: :unique, name: FakeApp.Registry},
+        {DynamicSupervisor, name: FakeApp.StreamSupervisor, strategy: :one_for_one}
+      ]
+
+      {:ok, _pid} = Supervisor.start_link(children, strategy: :one_for_one)
+
+      %{
+        registry: FakeApp.Registry,
+        supervisor: FakeApp.StreamSupervisor
+      }
+    end
+
+    test "loads events and commits successful event to the event store" do
+      idempotency_key = HeadwaterSpring.uuid()
+
+      FakeApp.EventStoreMock
+      |> expect(:load, fn "game-one" ->
+        {:ok, [], 0}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:commit!, fn "game-one",
+                             last_event_id = 0,
+                             events = %FakeApp.PointScored{},
+                             ^idempotency_key ->
+        {:ok, 1}
+      end)
+
+      HeadwaterSpring.HandlerMock
+      |> expect(:execute, fn nil, %FakeApp.ScorePoint{} ->
+        {:ok, %FakeApp.PointScored{}}
+      end)
+
+      HeadwaterSpring.HandlerMock
+      |> expect(:next_state, fn nil, %FakeApp.PointScored{} ->
+        %FakeApp{}
+      end)
+
+      %WriteRequest{
+        stream_id: "game-one",
+        handler: HeadwaterSpring.HandlerMock,
+        wish: %FakeApp.ScorePoint{},
+        idempotency_key: idempotency_key
+      }
+      |> FakeApp.HeadwaterSpring.handle()
     end
   end
 end

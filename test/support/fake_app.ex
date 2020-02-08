@@ -17,3 +17,10 @@ defmodule FakeAppFisherman do
     bus_id: "fake_app_bus_consumer",
     handlers: [FakeApp.PrinterMock]
 end
+
+defmodule FakeApp.HeadwaterSpring do
+  use HeadwaterSpring,
+    registry: FakeApp.Registry,
+    supervisor: FakeApp.StreamSupervisor,
+    event_store: FakeApp.EventStoreMock
+end

@@ -21,5 +21,9 @@ defmodule Example.Printer do
 end
 
 defmodule ExampleFisherman do
-  use HeadwaterFisherman, from_event_ref: 0, event_store: Example.EventStore, bus_id: "example_consumer_one", handlers: [Example.Printer]
+  use HeadwaterFisherman,
+    from_event_ref: 0,
+    event_store: Example.EventStore,
+    bus_id: "example_consumer_one",
+    handlers: [Example.Printer]
 end
