@@ -1,3 +1,3 @@
-# HeadwaterSpring
+# Headwater
 
-Event source library, write side.
+Event source library.

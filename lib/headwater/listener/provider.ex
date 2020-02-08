@@ -1,4 +1,4 @@
-defmodule HeadwaterFisherman.Provider do
+defmodule Headwater.Listener.Provider do
   @moduledoc """
   Provider of events for a single EventBus. It fetches
   the next series of events to be projected, for the EventBusConsumer

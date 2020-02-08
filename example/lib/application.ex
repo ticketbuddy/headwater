@@ -6,8 +6,8 @@ defmodule Example.Application do
       [
         Example.Repo,
         {Registry, keys: :unique, name: Example.Registry},
-        {DynamicSupervisor, name: Example.StreamSupervisor, strategy: :one_for_one}
-      ] ++ ExampleFisherman.children()
+        {DynamicSupervisor, name: Example.AggregateSupervisor, strategy: :one_for_one}
+      ] ++ ExampleListener.children()
 
     Supervisor.start_link(children, name: Example.Supervisor, strategy: :one_for_one)
   end

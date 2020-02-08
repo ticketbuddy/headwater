@@ -1,6 +1,6 @@
-defmodule HeadwaterFisherman do
+defmodule Headwater.Listener do
   @moduledoc """
-  Reading events from an event stream.
+  Reading events from an event aggregate.
   """
 
   defmacro __using__(
@@ -11,14 +11,14 @@ defmodule HeadwaterFisherman do
            ) do
     quote do
       defmodule Producer do
-        use HeadwaterFisherman.Provider,
+        use Headwater.Listener.Provider,
           from_event_ref: unquote(from_event_ref),
           event_store: unquote(event_store),
           bus_id: unquote(bus_id)
       end
 
       defmodule Consumer do
-        use HeadwaterFisherman.Consumer,
+        use Headwater.Listener.Consumer,
           provider: Producer,
           retry_limit: 5,
           handlers: unquote(handlers)

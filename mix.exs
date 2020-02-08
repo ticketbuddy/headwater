@@ -1,9 +1,9 @@
-defmodule HeadwaterSpring.MixProject do
+defmodule Headwater.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :headwater_spring,
+      app: :headwater,
       version: "0.1.0",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,

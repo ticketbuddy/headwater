@@ -1,11 +1,11 @@
 import Mix.Config
 
-config :headwater_spring,
-  supervisor: Example.StreamSupervisor,
+config :headwater,
+  supervisor: Example.AggregateSupervisor,
   registry: Example.Registry
 
 config :example, Example.Repo,
   username: "postgres",
   password: "postgres",
-  database: "headwater_spring_example_dev",
+  database: "headwater_example_dev",
   hostname: "localhost"

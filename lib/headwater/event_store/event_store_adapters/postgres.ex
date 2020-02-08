@@ -1,20 +1,20 @@
-defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
+defmodule Headwater.EventStoreAdapters.Postgres do
   defmacro __using__(repo: repo) do
     quote do
-      @behaviour HeadwaterSpring.EventStore
+      @behaviour Headwater.EventStore
       @repo unquote(repo)
       alias Ecto.Multi
 
-      alias HeadwaterSpring.EventStoreAdapters.Postgres.{
+      alias Headwater.EventStoreAdapters.Postgres.{
         HeadwaterEventsSchema,
         HeadwaterEventBusSchema
       }
 
-      @impl HeadwaterSpring.EventStore
-      def commit!(stream_id, last_event_id, event, idempotency_key) do
+      @impl Headwater.EventStore
+      def commit!(aggregate_id, last_event_id, event, idempotency_key) do
         new_event_id = last_event_id + 1
 
-        case insert_event(stream_id, event, new_event_id, idempotency_key) do
+        case insert_event(aggregate_id, event, new_event_id, idempotency_key) do
           {:ok, _} ->
             {:ok, new_event_id}
 
@@ -23,12 +23,12 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
         end
       end
 
-      defp insert_event(stream_id, event, latest_event_id, idempotency_key) do
-        serialised_event = EventSerializer.serialize(event)
+      defp insert_event(aggregate_id, event, latest_event_id, idempotency_key) do
+        serialised_event = Headwater.EventStore.EventSerializer.serialize(event)
 
         %{
           event_id: latest_event_id,
-          stream_id: stream_id,
+          aggregate_id: aggregate_id,
           event: serialised_event,
           idempotency_key: idempotency_key
         }
@@ -51,14 +51,14 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
         raise "Out of sync with database, crashing to reload"
       end
 
-      @impl HeadwaterSpring.EventStore
-      def load(stream_id) do
-        {events, last_event_id} = fetch_events(stream_id)
+      @impl Headwater.EventStore
+      def load(aggregate_id) do
+        {events, last_event_id} = fetch_events(aggregate_id)
 
         {:ok, events, last_event_id}
       end
 
-      @impl HeadwaterSpring.EventStore
+      @impl Headwater.EventStore
       def read_events(from_event_ref: event_ref, limit: limit) do
         import Ecto.Query, only: [from: 2]
 
@@ -71,7 +71,7 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
         |> serialise_events()
       end
 
-      @impl HeadwaterSpring.EventStore
+      @impl Headwater.EventStore
       def has_wish_previously_succeeded?(idempotency_key) do
         @repo.get_by(HeadwaterEventsSchema, idempotency_key: idempotency_key)
         |> case do
@@ -95,7 +95,7 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
         end
       end
 
-      @impl HeadwaterSpring.EventStore
+      @impl Headwater.EventStore
       def bus_has_completed_event_ref(
             bus_id: bus_id,
             event_ref: event_ref
@@ -108,11 +108,11 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
         |> @repo.insert()
       end
 
-      defp fetch_events(stream_id) do
+      defp fetch_events(aggregate_id) do
         import Ecto.Query, only: [from: 2]
 
         from(event in HeadwaterEventsSchema,
-          where: event.stream_id == ^stream_id,
+          where: event.aggregate_id == ^aggregate_id,
           order_by: [asc: event.event_id]
         )
         |> @repo.all()
@@ -130,7 +130,7 @@ defmodule HeadwaterSpring.EventStoreAdapters.Postgres do
           Map.put(
             event_schema,
             :event,
-            EventSerializer.deserialize(event_schema.event)
+            Headwater.EventStore.EventSerializer.deserialize(event_schema.event)
           )
         end)
       end

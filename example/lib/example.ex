@@ -1,12 +1,12 @@
-defmodule Example.HeadwaterSpring do
-  use HeadwaterSpring,
+defmodule Example.Headwater.AggregateDirectory do
+  use Headwater.AggregateDirectory,
     registry: Example.Registry,
-    supervisor: Example.StreamSupervisor,
+    supervisor: Example.AggregateSupervisor,
     event_store: Example.EventStore
 end
 
 defmodule Example do
-  use HeadwaterSpring.Router, spring: Example.HeadwaterSpring
+  use Headwater.Aggregate.Router, aggregate_directory: Example.Headwater.AggregateDirectory
 
   defaction(:inc, to: Example.Counter, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)
@@ -20,8 +20,8 @@ defmodule Example.Printer do
   end
 end
 
-defmodule ExampleFisherman do
-  use HeadwaterFisherman,
+defmodule ExampleListener do
+  use Headwater.Listener,
     from_event_ref: 0,
     event_store: Example.EventStore,
     bus_id: "example_consumer_one",

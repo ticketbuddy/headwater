@@ -1,14 +1,14 @@
-defmodule HeadwaterSpring do
+defmodule Headwater.AggregateDirectory do
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
   defmodule WriteRequest do
-    @enforce_keys [:stream_id, :handler, :wish, :idempotency_key]
+    @enforce_keys [:aggregate_id, :handler, :wish, :idempotency_key]
     defstruct @enforce_keys
   end
 
   defmodule ReadRequest do
-    @enforce_keys [:stream_id, :handler]
+    @enforce_keys [:aggregate_id, :handler]
     defstruct @enforce_keys
   end
 
@@ -33,10 +33,6 @@ defmodule HeadwaterSpring do
     # end
   end
 
-  def uuid do
-    UUID.uuid4(:hex)
-  end
-
   defmacro __using__(registry: registry, supervisor: supervisor, event_store: event_store) do
     quote do
       @registry unquote(registry)
@@ -44,35 +40,35 @@ defmodule HeadwaterSpring do
       @event_store unquote(event_store)
 
       def handle(request = %WriteRequest{}) do
-        %HeadwaterSpring.Stream{
-          id: request.stream_id,
+        %Headwater.Aggregate.AggregateWorker{
+          id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
           event_store: @event_store
         }
         |> ensure_started()
-        |> HeadwaterSpring.Stream.propose_wish(request.wish, request.idempotency_key)
-        |> HeadwaterSpring.Result.new()
+        |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
+        |> Headwater.AggregateDirectory.Result.new()
       end
 
       def read_state(request = %ReadRequest{}) do
-        %HeadwaterSpring.Stream{
-          id: request.stream_id,
+        %Headwater.Aggregate.AggregateWorker{
+          id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
           event_store: @event_store
         }
         |> ensure_started()
-        |> HeadwaterSpring.Stream.current_state()
-        |> HeadwaterSpring.Result.new()
+        |> Headwater.Aggregate.AggregateWorker.current_state()
+        |> Headwater.AggregateDirectory.Result.new()
       end
 
-      defp ensure_started(stream) do
-        HeadwaterSpring.Stream.new(stream)
+      defp ensure_started(aggregate) do
+        Headwater.Aggregate.AggregateWorker.new(aggregate)
 
-        stream
+        aggregate
       end
     end
   end
