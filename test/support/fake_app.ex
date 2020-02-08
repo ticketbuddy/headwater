@@ -10,8 +10,8 @@ defmodule FakeApp do
   end
 end
 
-defmodule FakeAppFisherman do
-  use Headwater.Fisherman,
+defmodule FakeAppListener do
+  use Headwater.Listener,
     from_event_ref: 0,
     event_store: FakeApp.EventStoreMock,
     bus_id: "fake_app_bus_consumer",

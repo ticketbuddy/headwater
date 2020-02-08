@@ -1,4 +1,4 @@
-defmodule Headwater.Fisherman.Consumer do
+defmodule Headwater.Listener.Consumer do
   @moduledoc """
   A GenStage consumer for the consumption of events
   from a single EventBus, that has fetched from the DB.
@@ -80,7 +80,7 @@ defmodule Headwater.Fisherman.Consumer do
 
       defp build_causation_idempotency_key(event) do
         (Integer.to_string(event.event_ref) <> event.stream_id)
-        |> Headwater.Fisherman.web_safe_md5()
+        |> Headwater.Listener.web_safe_md5()
       end
 
       defp event_handler_callback!(_event, _attempt) do

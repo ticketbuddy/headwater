@@ -1,6 +1,6 @@
-defmodule Headwater.Fisherman.FishermanTest do
+defmodule Headwater.Listener.ListenerTest do
   use ExUnit.Case
-  alias Headwater.Fisherman.EventHandlerMock
+  alias Headwater.Listener.EventHandlerMock
   alias Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema
 
   import Mox
@@ -55,8 +55,8 @@ defmodule Headwater.Fisherman.FishermanTest do
       :ok
     end)
 
-    FakeAppFisherman.Producer.start_link([])
-    FakeAppFisherman.Consumer.start_link([])
+    FakeAppListener.Producer.start_link([])
+    FakeAppListener.Consumer.start_link([])
 
     assert_receive(:bus_has_completed_event_ref, 500)
   end

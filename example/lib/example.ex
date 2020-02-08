@@ -20,8 +20,8 @@ defmodule Example.Printer do
   end
 end
 
-defmodule ExampleFisherman do
-  use Headwater.Fisherman,
+defmodule ExampleListener do
+  use Headwater.Listener,
     from_event_ref: 0,
     event_store: Example.EventStore,
     bus_id: "example_consumer_one",
