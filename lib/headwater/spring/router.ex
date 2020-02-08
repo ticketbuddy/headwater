@@ -8,12 +8,12 @@ defmodule Headwater.Spring.Router do
 
   alias Headwater.Spring.{WriteRequest, ReadRequest}
 
-  defmacro defaction(action, to: stream, by_key: key) when is_atom(action) do
+  defmacro defaction(action, to: aggregate, by_key: key) when is_atom(action) do
     quote do
       def unquote(action)(wish, opts \\ []) do
         %WriteRequest{
-          stream_id: Map.get(wish, unquote(key)),
-          handler: unquote(stream),
+          aggregate_id: Map.get(wish, unquote(key)),
+          handler: unquote(aggregate),
           wish: wish,
           idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.Spring.uuid())
         }
@@ -22,12 +22,12 @@ defmodule Headwater.Spring.Router do
     end
   end
 
-  defmacro defread(read, to: stream) when is_atom(read) do
+  defmacro defread(read, to: aggregate) when is_atom(read) do
     quote do
-      def unquote(read)(stream_id) do
+      def unquote(read)(aggregate_id) do
         %ReadRequest{
-          stream_id: stream_id,
-          handler: unquote(stream)
+          aggregate_id: aggregate_id,
+          handler: unquote(aggregate)
         }
         |> @spring.read_state()
       end

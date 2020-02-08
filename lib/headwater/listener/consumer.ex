@@ -72,14 +72,14 @@ defmodule Headwater.Listener.Consumer do
       defp event_notes(event) do
         %{
           event_ref: event.event_ref,
-          stream_id: event.stream_id,
+          aggregate_id: event.aggregate_id,
           effect_idempotent_key: build_causation_idempotency_key(event),
           event_occurred_at: event.inserted_at
         }
       end
 
       defp build_causation_idempotency_key(event) do
-        (Integer.to_string(event.event_ref) <> event.stream_id)
+        (Integer.to_string(event.event_ref) <> event.aggregate_id)
         |> Headwater.Listener.web_safe_md5()
       end
 

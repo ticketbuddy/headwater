@@ -11,10 +11,10 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       }
 
       @impl Headwater.EventStore
-      def commit!(stream_id, last_event_id, event, idempotency_key) do
+      def commit!(aggregate_id, last_event_id, event, idempotency_key) do
         new_event_id = last_event_id + 1
 
-        case insert_event(stream_id, event, new_event_id, idempotency_key) do
+        case insert_event(aggregate_id, event, new_event_id, idempotency_key) do
           {:ok, _} ->
             {:ok, new_event_id}
 
@@ -23,12 +23,12 @@ defmodule Headwater.EventStoreAdapters.Postgres do
         end
       end
 
-      defp insert_event(stream_id, event, latest_event_id, idempotency_key) do
+      defp insert_event(aggregate_id, event, latest_event_id, idempotency_key) do
         serialised_event = Headwater.EventStore.EventSerializer.serialize(event)
 
         %{
           event_id: latest_event_id,
-          stream_id: stream_id,
+          aggregate_id: aggregate_id,
           event: serialised_event,
           idempotency_key: idempotency_key
         }
@@ -52,8 +52,8 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       end
 
       @impl Headwater.EventStore
-      def load(stream_id) do
-        {events, last_event_id} = fetch_events(stream_id)
+      def load(aggregate_id) do
+        {events, last_event_id} = fetch_events(aggregate_id)
 
         {:ok, events, last_event_id}
       end
@@ -108,11 +108,11 @@ defmodule Headwater.EventStoreAdapters.Postgres do
         |> @repo.insert()
       end
 
-      defp fetch_events(stream_id) do
+      defp fetch_events(aggregate_id) do
         import Ecto.Query, only: [from: 2]
 
         from(event in HeadwaterEventsSchema,
-          where: event.stream_id == ^stream_id,
+          where: event.aggregate_id == ^aggregate_id,
           order_by: [asc: event.event_id]
         )
         |> @repo.all()

@@ -17,7 +17,7 @@ defmodule Headwater.Spring.RouterTest do
     |> expect(:handle, fn %Headwater.Spring.WriteRequest{
                             handler: FakeApp,
                             idempotency_key: _a_random_value,
-                            stream_id: "game-one",
+                            aggregate_id: "game-one",
                             wish: %FakeApp.ScorePoint{game_id: "game-one", value: 1}
                           } ->
       {:ok,
@@ -57,7 +57,7 @@ defmodule Headwater.Spring.RouterTest do
     Headwater.SpringMock
     |> expect(:read_state, fn %Headwater.Spring.ReadRequest{
                                 handler: FakeApp,
-                                stream_id: "game-one"
+                                aggregate_id: "game-one"
                               } ->
       {:ok,
        %Headwater.Spring.Result{

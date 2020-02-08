@@ -3,12 +3,12 @@ defmodule Headwater.Spring do
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
   defmodule WriteRequest do
-    @enforce_keys [:stream_id, :handler, :wish, :idempotency_key]
+    @enforce_keys [:aggregate_id, :handler, :wish, :idempotency_key]
     defstruct @enforce_keys
   end
 
   defmodule ReadRequest do
-    @enforce_keys [:stream_id, :handler]
+    @enforce_keys [:aggregate_id, :handler]
     defstruct @enforce_keys
   end
 
@@ -44,35 +44,35 @@ defmodule Headwater.Spring do
       @event_store unquote(event_store)
 
       def handle(request = %WriteRequest{}) do
-        %Headwater.Spring.Stream{
-          id: request.stream_id,
+        %Headwater.Spring.Aggregate{
+          id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
           event_store: @event_store
         }
         |> ensure_started()
-        |> Headwater.Spring.Stream.propose_wish(request.wish, request.idempotency_key)
+        |> Headwater.Spring.Aggregate.propose_wish(request.wish, request.idempotency_key)
         |> Headwater.Spring.Result.new()
       end
 
       def read_state(request = %ReadRequest{}) do
-        %Headwater.Spring.Stream{
-          id: request.stream_id,
+        %Headwater.Spring.Aggregate{
+          id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
           event_store: @event_store
         }
         |> ensure_started()
-        |> Headwater.Spring.Stream.current_state()
+        |> Headwater.Spring.Aggregate.current_state()
         |> Headwater.Spring.Result.new()
       end
 
-      defp ensure_started(stream) do
-        Headwater.Spring.Stream.new(stream)
+      defp ensure_started(aggregate) do
+        Headwater.Spring.Aggregate.new(aggregate)
 
-        stream
+        aggregate
       end
     end
   end

@@ -1,7 +1,7 @@
 defmodule Example.Headwater.Spring do
   use Headwater.Spring,
     registry: Example.Registry,
-    supervisor: Example.StreamSupervisor,
+    supervisor: Example.AggregateSupervisor,
     event_store: Example.EventStore
 end
 

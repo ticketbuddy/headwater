@@ -21,6 +21,6 @@ end
 defmodule FakeApp.Headwater.Spring do
   use Headwater.Spring,
     registry: FakeApp.Registry,
-    supervisor: FakeApp.StreamSupervisor,
+    supervisor: FakeApp.AggregateSupervisor,
     event_store: FakeApp.EventStoreMock
 end

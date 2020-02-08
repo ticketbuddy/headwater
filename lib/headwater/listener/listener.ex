@@ -1,6 +1,6 @@
 defmodule Headwater.Listener do
   @moduledoc """
-  Reading events from an event stream.
+  Reading events from an event aggregate.
   """
 
   defmacro __using__(

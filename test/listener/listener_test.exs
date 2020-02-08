@@ -32,7 +32,7 @@ defmodule Headwater.Listener.ListenerTest do
         %HeadwaterEventsSchema{
           event_id: 1,
           event_ref: 1,
-          stream_id: "game-one",
+          aggregate_id: "game-one",
           idempotency_key: "f3e9ee81b8cd4283a40a4093b3ed551b",
           event: fake_event,
           inserted_at: ~U[2010-10-10 10:10:10Z]
@@ -50,7 +50,7 @@ defmodule Headwater.Listener.ListenerTest do
                                   effect_idempotent_key: _,
                                   event_occurred_at: ~U[2010-10-10 10:10:10Z],
                                   event_ref: 1,
-                                  stream_id: "game-one"
+                                  aggregate_id: "game-one"
                                 } ->
       :ok
     end)

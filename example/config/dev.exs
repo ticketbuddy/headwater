@@ -1,7 +1,7 @@
 import Mix.Config
 
 config :headwater,
-  supervisor: Example.StreamSupervisor,
+  supervisor: Example.AggregateSupervisor,
   registry: Example.Registry
 
 config :example, Example.Repo,

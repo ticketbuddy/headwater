@@ -1,6 +1,6 @@
-defmodule Headwater.Spring.StreamTest do
+defmodule Headwater.Spring.AggregateTest do
   use ExUnit.Case
-  alias Headwater.Spring.Stream
+  alias Headwater.Spring.Aggregate
   alias Headwater.Spring.WriteRequest
 
   import Mox
@@ -12,8 +12,8 @@ defmodule Headwater.Spring.StreamTest do
     :ok
   end
 
-  @stream %Headwater.Spring.Stream{
-    id: "stream-one",
+  @aggregate %Headwater.Spring.Aggregate{
+    id: "aggregate-one",
     handler: Headwater.Spring.HandlerMock,
     registry: :fake_registry,
     supervisor: :fake_supervisor,
@@ -21,21 +21,21 @@ defmodule Headwater.Spring.StreamTest do
   }
 
   test "init/1" do
-    assert {:ok, %{stream: @stream}} == Stream.init(%{stream: @stream})
+    assert {:ok, %{aggregate: @aggregate}} == Aggregate.init(%{aggregate: @aggregate})
   end
 
   describe "handles a new wish" do
     @wish %FakeApp.ScorePoint{}
     @event %FakeApp.PointScored{}
-    @stream_id "stream-one"
+    @aggregate_id "aggregate-one"
     @idempotency_key "idem-12345"
 
-    @msg {:wish, @stream_id, @wish, @idempotency_key}
+    @msg {:wish, @aggregate_id, @wish, @idempotency_key}
     @from self()
 
     @state %{
-      stream: @stream,
-      stream_state: %FakeApp{},
+      aggregate: @aggregate,
+      aggregate_state: %FakeApp{},
       last_event_id: 3
     }
 
@@ -51,42 +51,42 @@ defmodule Headwater.Spring.StreamTest do
       end)
 
       Headwater.EventStoreMock
-      |> expect(:commit!, fn @stream_id, last_event_id = 3, @event, @idempotency_key ->
+      |> expect(:commit!, fn @aggregate_id, last_event_id = 3, @event, @idempotency_key ->
         {:ok, 4}
       end)
 
       assert {:reply, {:ok, {4, %FakeApp{total: 1}}},
               %{
                 last_event_id: 4,
-                stream: %Headwater.Spring.Stream{
+                aggregate: %Headwater.Spring.Aggregate{
                   event_store: Headwater.EventStoreMock,
                   handler: Headwater.Spring.HandlerMock,
-                  id: "stream-one",
+                  id: "aggregate-one",
                   registry: :fake_registry,
                   supervisor: :fake_supervisor
                 },
-                stream_state: %FakeApp{total: 1}
-              }} == Stream.handle_call(@msg, @from, @state)
+                aggregate_state: %FakeApp{total: 1}
+              }} == Aggregate.handle_call(@msg, @from, @state)
     end
 
     test "when wish has already succeeded" do
       Headwater.EventStoreMock
-      |> expect(:commit!, fn _stream_id, _last_event_id, _event, _idempotency_key ->
+      |> expect(:commit!, fn _aggregate_id, _last_event_id, _event, _idempotency_key ->
         {:error, :wish_already_completed}
       end)
 
       assert {:reply, {:ok, {3, %FakeApp{}}},
               %{
                 last_event_id: 3,
-                stream: %Headwater.Spring.Stream{
+                aggregate: %Headwater.Spring.Aggregate{
                   event_store: Headwater.EventStoreMock,
                   handler: Headwater.Spring.HandlerMock,
-                  id: "stream-one",
+                  id: "aggregate-one",
                   registry: :fake_registry,
                   supervisor: :fake_supervisor
                 },
-                stream_state: %FakeApp{}
-              }} == Stream.handle_call(@msg, @from, @state)
+                aggregate_state: %FakeApp{}
+              }} == Aggregate.handle_call(@msg, @from, @state)
     end
   end
 
@@ -103,7 +103,7 @@ defmodule Headwater.Spring.StreamTest do
       end)
 
       assert {:reply, {:error, :execute, {:error, :not_enough_lemonade}}, @state} ==
-               Stream.handle_call(@msg, @from, @state)
+               Aggregate.handle_call(@msg, @from, @state)
     end
 
     test "when HAS been previously successful" do
@@ -118,7 +118,7 @@ defmodule Headwater.Spring.StreamTest do
       end)
 
       assert {:reply, {:ok, {3, %FakeApp{}}}, @state} ==
-               Stream.handle_call(@msg, @from, @state)
+               Aggregate.handle_call(@msg, @from, @state)
     end
   end
 
@@ -130,15 +130,15 @@ defmodule Headwater.Spring.StreamTest do
       end)
 
       assert {:reply, {:error, :next_state, {:error, :not_enough_fanta}}, @state} ==
-               Stream.handle_call(@msg, @from, @state)
+               Aggregate.handle_call(@msg, @from, @state)
     end
   end
 
-  describe "on first stream action" do
+  describe "on first aggregate action" do
     setup do
       children = [
         {Registry, keys: :unique, name: FakeApp.Registry},
-        {DynamicSupervisor, name: FakeApp.StreamSupervisor, strategy: :one_for_one}
+        {DynamicSupervisor, name: FakeApp.AggregateSupervisor, strategy: :one_for_one}
       ]
 
       {:ok, _pid} = Supervisor.start_link(children, strategy: :one_for_one)
@@ -173,7 +173,7 @@ defmodule Headwater.Spring.StreamTest do
       end)
 
       %WriteRequest{
-        stream_id: "game-one",
+        aggregate_id: "game-one",
         handler: Headwater.Spring.HandlerMock,
         wish: %FakeApp.ScorePoint{},
         idempotency_key: idempotency_key

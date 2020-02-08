@@ -12,7 +12,7 @@ defmodule Example.EventStoreTest do
                 },
                 event_id: 1,
                 event_ref: 5,
-                stream_id: "event-ordering"
+                aggregate_id: "event-ordering"
               },
               %Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema{
                 event: %Example.Incremented{
@@ -21,7 +21,7 @@ defmodule Example.EventStoreTest do
                 },
                 event_id: 2,
                 event_ref: 6,
-                stream_id: "event-ordering"
+                aggregate_id: "event-ordering"
               }
             ], 2} = Example.EventStore.load("event-ordering")
   end
