@@ -1,4 +1,4 @@
-defmodule HeadwaterSpring do
+defmodule Headwater.Spring do
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
@@ -44,7 +44,7 @@ defmodule HeadwaterSpring do
       @event_store unquote(event_store)
 
       def handle(request = %WriteRequest{}) do
-        %HeadwaterSpring.Stream{
+        %Headwater.Spring.Stream{
           id: request.stream_id,
           handler: request.handler,
           registry: @registry,
@@ -52,12 +52,12 @@ defmodule HeadwaterSpring do
           event_store: @event_store
         }
         |> ensure_started()
-        |> HeadwaterSpring.Stream.propose_wish(request.wish, request.idempotency_key)
-        |> HeadwaterSpring.Result.new()
+        |> Headwater.Spring.Stream.propose_wish(request.wish, request.idempotency_key)
+        |> Headwater.Spring.Result.new()
       end
 
       def read_state(request = %ReadRequest{}) do
-        %HeadwaterSpring.Stream{
+        %Headwater.Spring.Stream{
           id: request.stream_id,
           handler: request.handler,
           registry: @registry,
@@ -65,12 +65,12 @@ defmodule HeadwaterSpring do
           event_store: @event_store
         }
         |> ensure_started()
-        |> HeadwaterSpring.Stream.current_state()
-        |> HeadwaterSpring.Result.new()
+        |> Headwater.Spring.Stream.current_state()
+        |> Headwater.Spring.Result.new()
       end
 
       defp ensure_started(stream) do
-        HeadwaterSpring.Stream.new(stream)
+        Headwater.Spring.Stream.new(stream)
 
         stream
       end

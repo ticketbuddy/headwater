@@ -1,23 +1,23 @@
-defmodule HeadwaterSpring.StreamTest do
+defmodule Headwater.Spring.StreamTest do
   use ExUnit.Case
-  alias HeadwaterSpring.Stream
-  alias HeadwaterSpring.WriteRequest
+  alias Headwater.Spring.Stream
+  alias Headwater.Spring.WriteRequest
 
   import Mox
   setup :set_mox_global
   setup :verify_on_exit!
 
   setup do
-    Mox.stub_with(HeadwaterSpring.HandlerMock, HeadwaterSpring.HandlerStub)
+    Mox.stub_with(Headwater.Spring.HandlerMock, Headwater.Spring.HandlerStub)
     :ok
   end
 
-  @stream %HeadwaterSpring.Stream{
+  @stream %Headwater.Spring.Stream{
     id: "stream-one",
-    handler: HeadwaterSpring.HandlerMock,
+    handler: Headwater.Spring.HandlerMock,
     registry: :fake_registry,
     supervisor: :fake_supervisor,
-    event_store: HeadwaterSpring.EventStoreMock
+    event_store: Headwater.EventStoreMock
   }
 
   test "init/1" do
@@ -40,17 +40,17 @@ defmodule HeadwaterSpring.StreamTest do
     }
 
     test "when handler execute and next_state succeed" do
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:execute, fn current_state = %FakeApp{}, wish = @wish ->
-        HeadwaterSpring.HandlerStub.execute(current_state, wish)
+        Headwater.Spring.HandlerStub.execute(current_state, wish)
       end)
 
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:next_state, fn current_state = %FakeApp{}, event = @event ->
-        HeadwaterSpring.HandlerStub.next_state(current_state, event)
+        Headwater.Spring.HandlerStub.next_state(current_state, event)
       end)
 
-      HeadwaterSpring.EventStoreMock
+      Headwater.EventStoreMock
       |> expect(:commit!, fn @stream_id, last_event_id = 3, @event, @idempotency_key ->
         {:ok, 4}
       end)
@@ -58,9 +58,9 @@ defmodule HeadwaterSpring.StreamTest do
       assert {:reply, {:ok, {4, %FakeApp{total: 1}}},
               %{
                 last_event_id: 4,
-                stream: %HeadwaterSpring.Stream{
-                  event_store: HeadwaterSpring.EventStoreMock,
-                  handler: HeadwaterSpring.HandlerMock,
+                stream: %Headwater.Spring.Stream{
+                  event_store: Headwater.EventStoreMock,
+                  handler: Headwater.Spring.HandlerMock,
                   id: "stream-one",
                   registry: :fake_registry,
                   supervisor: :fake_supervisor
@@ -70,7 +70,7 @@ defmodule HeadwaterSpring.StreamTest do
     end
 
     test "when wish has already succeeded" do
-      HeadwaterSpring.EventStoreMock
+      Headwater.EventStoreMock
       |> expect(:commit!, fn _stream_id, _last_event_id, _event, _idempotency_key ->
         {:error, :wish_already_completed}
       end)
@@ -78,9 +78,9 @@ defmodule HeadwaterSpring.StreamTest do
       assert {:reply, {:ok, {3, %FakeApp{}}},
               %{
                 last_event_id: 3,
-                stream: %HeadwaterSpring.Stream{
-                  event_store: HeadwaterSpring.EventStoreMock,
-                  handler: HeadwaterSpring.HandlerMock,
+                stream: %Headwater.Spring.Stream{
+                  event_store: Headwater.EventStoreMock,
+                  handler: Headwater.Spring.HandlerMock,
                   id: "stream-one",
                   registry: :fake_registry,
                   supervisor: :fake_supervisor
@@ -92,12 +92,12 @@ defmodule HeadwaterSpring.StreamTest do
 
   describe "when handler.execute fails" do
     test "when has NOT been previously successful" do
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:execute, fn current_state, event ->
         {:error, :not_enough_lemonade}
       end)
 
-      HeadwaterSpring.EventStoreMock
+      Headwater.EventStoreMock
       |> expect(:has_wish_previously_succeeded?, fn @idempotency_key ->
         false
       end)
@@ -107,12 +107,12 @@ defmodule HeadwaterSpring.StreamTest do
     end
 
     test "when HAS been previously successful" do
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:execute, fn current_state, event ->
         {:error, :execute, :not_enough_lemonade}
       end)
 
-      HeadwaterSpring.EventStoreMock
+      Headwater.EventStoreMock
       |> expect(:has_wish_previously_succeeded?, fn @idempotency_key ->
         true
       end)
@@ -124,7 +124,7 @@ defmodule HeadwaterSpring.StreamTest do
 
   describe "when handler.next_state fails" do
     test "returns next_state error" do
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:next_state, fn current_state, event ->
         {:error, :not_enough_fanta}
       end)
@@ -147,7 +147,7 @@ defmodule HeadwaterSpring.StreamTest do
     end
 
     test "loads events and commits successful event to the event store" do
-      idempotency_key = HeadwaterSpring.uuid()
+      idempotency_key = Headwater.Spring.uuid()
 
       FakeApp.EventStoreMock
       |> expect(:load, fn "game-one" ->
@@ -162,23 +162,23 @@ defmodule HeadwaterSpring.StreamTest do
         {:ok, 1}
       end)
 
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:execute, fn nil, %FakeApp.ScorePoint{} ->
         {:ok, %FakeApp.PointScored{}}
       end)
 
-      HeadwaterSpring.HandlerMock
+      Headwater.Spring.HandlerMock
       |> expect(:next_state, fn nil, %FakeApp.PointScored{} ->
         %FakeApp{}
       end)
 
       %WriteRequest{
         stream_id: "game-one",
-        handler: HeadwaterSpring.HandlerMock,
+        handler: Headwater.Spring.HandlerMock,
         wish: %FakeApp.ScorePoint{},
         idempotency_key: idempotency_key
       }
-      |> FakeApp.HeadwaterSpring.handle()
+      |> FakeApp.Headwater.Spring.handle()
     end
   end
 end

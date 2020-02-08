@@ -1,12 +1,12 @@
-defmodule HeadwaterSpring.Router do
+defmodule Headwater.Spring.Router do
   defmacro __using__(spring: spring) do
     quote do
       @spring unquote(spring)
-      import HeadwaterSpring.Router, only: [defaction: 2, defread: 2]
+      import Headwater.Spring.Router, only: [defaction: 2, defread: 2]
     end
   end
 
-  alias HeadwaterSpring.{WriteRequest, ReadRequest}
+  alias Headwater.Spring.{WriteRequest, ReadRequest}
 
   defmacro defaction(action, to: stream, by_key: key) when is_atom(action) do
     quote do
@@ -15,7 +15,7 @@ defmodule HeadwaterSpring.Router do
           stream_id: Map.get(wish, unquote(key)),
           handler: unquote(stream),
           wish: wish,
-          idempotency_key: Keyword.get(opts, :idempotency_key, HeadwaterSpring.uuid())
+          idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.Spring.uuid())
         }
         |> @spring.handle()
       end

@@ -1,5 +1,5 @@
-defmodule HeadwaterSpring.HandlerStub do
-  @behaviour HeadwaterSpring.Handler
+defmodule Headwater.Spring.HandlerStub do
+  @behaviour Headwater.Spring.Handler
 
   def execute(current_state = %FakeApp{}, wish = %FakeApp.ScorePoint{}) do
     {:ok,

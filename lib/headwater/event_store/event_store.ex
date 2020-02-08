@@ -1,4 +1,4 @@
-defmodule HeadwaterSpring.EventStore do
+defmodule Headwater.EventStore do
   @moduledoc """
   Behaviour for storage & reading of events
   """

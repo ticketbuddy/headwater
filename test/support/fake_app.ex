@@ -11,15 +11,15 @@ defmodule FakeApp do
 end
 
 defmodule FakeAppFisherman do
-  use HeadwaterFisherman,
+  use Headwater.Fisherman,
     from_event_ref: 0,
     event_store: FakeApp.EventStoreMock,
     bus_id: "fake_app_bus_consumer",
     handlers: [FakeApp.PrinterMock]
 end
 
-defmodule FakeApp.HeadwaterSpring do
-  use HeadwaterSpring,
+defmodule FakeApp.Headwater.Spring do
+  use Headwater.Spring,
     registry: FakeApp.Registry,
     supervisor: FakeApp.StreamSupervisor,
     event_store: FakeApp.EventStoreMock

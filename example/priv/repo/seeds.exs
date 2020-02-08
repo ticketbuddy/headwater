@@ -1,4 +1,4 @@
-alias HeadwaterSpring.EventStoreAdapters.Postgres.{HeadwaterEventsSchema, HeadwaterEventBusSchema}
+alias Headwater.EventStoreAdapters.Postgres.{HeadwaterEventsSchema, HeadwaterEventBusSchema}
 
 # Events
 Example.Repo.insert!(%HeadwaterEventsSchema{

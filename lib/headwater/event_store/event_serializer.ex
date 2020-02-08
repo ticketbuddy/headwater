@@ -1,4 +1,4 @@
-defmodule EventSerializer do
+defmodule Headwater.EventStore.EventSerializer do
   @moduledoc """
   For the writing and reading of events in the event store.
   """

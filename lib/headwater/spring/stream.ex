@@ -1,4 +1,4 @@
-defmodule HeadwaterSpring.Stream do
+defmodule Headwater.Spring.Stream do
   @enforce_keys [:id, :handler, :registry, :supervisor, :event_store]
   defstruct @enforce_keys
 

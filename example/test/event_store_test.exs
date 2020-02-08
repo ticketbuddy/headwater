@@ -5,7 +5,7 @@ defmodule Example.EventStoreTest do
   test "loads the events in the correct order, and with the correct last_event_id" do
     assert {:ok,
             [
-              %HeadwaterSpring.EventStoreAdapters.Postgres.HeadwaterEventsSchema{
+              %Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema{
                 event: %Example.Incremented{
                   counter_id: "event-ordering",
                   increment_by: 10
@@ -14,7 +14,7 @@ defmodule Example.EventStoreTest do
                 event_ref: 5,
                 stream_id: "event-ordering"
               },
-              %HeadwaterSpring.EventStoreAdapters.Postgres.HeadwaterEventsSchema{
+              %Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema{
                 event: %Example.Incremented{
                   counter_id: "event-ordering",
                   increment_by: 20

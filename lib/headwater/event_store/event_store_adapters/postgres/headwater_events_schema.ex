@@ -1,4 +1,4 @@
-defmodule HeadwaterSpring.EventStoreAdapters.Postgres.HeadwaterEventsSchema do
+defmodule Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema do
   use Ecto.Schema
   @primary_key false
   @timestamps_opts [type: :utc_datetime]

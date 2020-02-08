@@ -1,12 +1,12 @@
-Mox.defmock(HeadwaterSpring.HandlerMock, for: HeadwaterSpring.Handler)
-Mox.defmock(FakeApp.PrinterMock, for: HeadwaterFisherman.Fisherman.EventHandler)
-Mox.defmock(FakeApp.EventStoreMock, for: HeadwaterSpring.EventStore)
-Mox.defmock(HeadwaterSpringMock, for: HeadwaterSpring)
+Mox.defmock(Headwater.Spring.HandlerMock, for: Headwater.Spring.Handler)
+Mox.defmock(FakeApp.PrinterMock, for: Headwater.Fisherman.EventHandler)
+Mox.defmock(FakeApp.EventStoreMock, for: Headwater.EventStore)
+Mox.defmock(Headwater.SpringMock, for: Headwater.Spring)
 
-Mox.defmock(HeadwaterFisherman.Fisherman.EventHandlerMock,
-  for: HeadwaterFisherman.Fisherman.EventHandler
+Mox.defmock(Headwater.Fisherman.EventHandlerMock,
+  for: Headwater.Fisherman.EventHandler
 )
 
-Mox.defmock(HeadwaterSpring.EventStoreMock, for: HeadwaterSpring.EventStore)
+Mox.defmock(Headwater.EventStoreMock, for: Headwater.EventStore)
 
 ExUnit.start()

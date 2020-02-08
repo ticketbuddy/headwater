@@ -1,7 +1,7 @@
-defmodule HeadwaterFisherman.FishermanTest do
+defmodule Headwater.Fisherman.FishermanTest do
   use ExUnit.Case
-  alias HeadwaterFisherman.Fisherman.EventHandlerMock
-  alias HeadwaterSpring.EventStoreAdapters.Postgres.HeadwaterEventsSchema
+  alias Headwater.Fisherman.EventHandlerMock
+  alias Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema
 
   import Mox
   setup :set_mox_global
