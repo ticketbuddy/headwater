@@ -32,6 +32,12 @@ defmodule Headwater.AggregateDirectory do
     # def new({:error, :next_state, response}) do
     #
     # end
+
+    defimpl Jason.Encoder, for: [Headwater.AggregateDirectory.Result] do
+      def encode(struct, opts) do
+        Jason.Encode.map(Map.from_struct(struct.state), opts)
+      end
+    end
   end
 
   defmacro __using__(registry: registry, supervisor: supervisor, event_store: event_store) do
