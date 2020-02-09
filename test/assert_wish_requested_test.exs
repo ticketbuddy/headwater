@@ -2,7 +2,12 @@ defmodule Headwater.TestSupport.AggregateDirectoryTest do
   use ExUnit.Case
 
   import Headwater.TestSupport.AggregateDirectory,
-    only: [set_handle_result: 1, assert_wish_requested: 1]
+    only: [
+      set_read_state_result: 1,
+      set_handle_result: 1,
+      assert_wish_requested: 1,
+      assert_state_requested: 1
+    ]
 
   alias Headwater.AggregateDirectory.Result
 
@@ -17,7 +22,27 @@ defmodule Headwater.TestSupport.AggregateDirectoryTest do
     })
   end
 
-  test "can stub the result" do
+  test "can assert that a state has been requested" do
+    FakeApp.Router.get_score("game-one")
+
+    assert_state_requested(%Headwater.AggregateDirectory.ReadRequest{
+      aggregate_id: "game-one",
+      handler: FakeApp
+    })
+  end
+
+  test "can stub the result (read)" do
+    set_read_state_result({:error, :a_read_reason})
+    assert {:error, :a_read_reason} == FakeApp.Router.get_score("game-one")
+
+    # clears the return value
+    assert is_nil(Process.get(:_headwater_read_state_result))
+
+    # goes back to default
+    assert {:ok, %Result{}} == FakeApp.Router.score(%FakeApp.ScorePoint{})
+  end
+
+  test "can stub the result (action)" do
     set_handle_result({:error, :a_reason})
     assert {:error, :a_reason} == FakeApp.Router.score(%FakeApp.ScorePoint{})
 

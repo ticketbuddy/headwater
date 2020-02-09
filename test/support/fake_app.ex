@@ -33,4 +33,5 @@ defmodule FakeApp.Router do
   use Headwater.Aggregate.Router, aggregate_directory: Headwater.TestSupport.AggregateDirectory
 
   defaction(:score, to: FakeApp, by_key: :game_id)
+  defread(:get_score, to: FakeApp)
 end
