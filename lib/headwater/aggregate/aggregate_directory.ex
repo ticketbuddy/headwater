@@ -39,6 +39,8 @@ defmodule Headwater.AggregateDirectory do
       @supervisor unquote(supervisor)
       @event_store unquote(event_store)
 
+      use Headwater.Aggregate.Expand, aggregate_directory: __MODULE__
+
       def handle(request = %WriteRequest{}) do
         %Headwater.Aggregate.AggregateWorker{
           id: request.aggregate_id,
