@@ -9,10 +9,22 @@ defmodule Headwater.TestSupport.AggregateDirectory do
   end
 
   def read_state(read_request = %ReadRequest{}) do
-    raise "not implemented"
+    send(self(), {:_headwater_read_state, read_request})
+
+    Process.delete(:_headwater_read_state_result) || {:ok, %Result{}}
   end
 
   def set_handle_result(result), do: Process.put(:_headwater_handle_result, result)
+  def set_read_state_result(result), do: Process.put(:_headwater_read_state_result, result)
+
+  defmacro assert_state_requested(read_request) do
+    quote do
+      ExUnit.Assertions.assert_receive(
+        {:_headwater_read_state, unquote(read_request)},
+        1000
+      )
+    end
+  end
 
   defmacro assert_wish_requested(write_request) do
     quote do
