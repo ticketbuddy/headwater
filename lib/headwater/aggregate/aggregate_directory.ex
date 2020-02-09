@@ -13,13 +13,13 @@ defmodule Headwater.AggregateDirectory do
   end
 
   defmodule Result do
-    @enforce_keys [:latest_event_id, :state]
+    @enforce_keys [:event_id, :state]
     defstruct @enforce_keys
 
     def new({:ok, {latest_event_id, state}}) do
       {:ok,
        %Result{
-         latest_event_id: latest_event_id,
+         event_id: latest_event_id,
          state: state
        }}
     end
