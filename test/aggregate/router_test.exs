@@ -23,14 +23,16 @@ defmodule Headwater.Aggregate.RouterTest do
       {:ok,
        %Headwater.AggregateDirectory.Result{
          event_id: 1,
-         state: %FakeApp{}
+         state: %FakeApp{},
+         aggregate_id: "game-one"
        }}
     end)
 
     assert {:ok,
             %Headwater.AggregateDirectory.Result{
               event_id: 1,
-              state: %FakeApp{}
+              state: %FakeApp{},
+              aggregate_id: "game-one"
             }} == FakeRouter.score(%FakeApp.ScorePoint{})
   end
 
@@ -42,14 +44,16 @@ defmodule Headwater.Aggregate.RouterTest do
       {:ok,
        %Headwater.AggregateDirectory.Result{
          event_id: 1,
-         state: %FakeApp{}
+         state: %FakeApp{},
+         aggregate_id: "game-one"
        }}
     end)
 
     assert {:ok,
             %Headwater.AggregateDirectory.Result{
               event_id: 1,
-              state: %FakeApp{}
+              state: %FakeApp{},
+              aggregate_id: "game-one"
             }} == FakeRouter.score(%FakeApp.ScorePoint{}, idempotency_key: "idem-po-54321")
   end
 
@@ -62,14 +66,16 @@ defmodule Headwater.Aggregate.RouterTest do
       {:ok,
        %Headwater.AggregateDirectory.Result{
          event_id: 1,
-         state: %FakeApp{}
+         state: %FakeApp{},
+         aggregate_id: "game-one"
        }}
     end)
 
     assert {:ok,
             %Headwater.AggregateDirectory.Result{
               event_id: 1,
-              state: %FakeApp{}
+              state: %FakeApp{},
+              aggregate_id: "game-one"
             }} == FakeRouter.read_points("game-one")
   end
 end

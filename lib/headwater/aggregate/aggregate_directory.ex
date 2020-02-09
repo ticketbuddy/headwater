@@ -13,14 +13,15 @@ defmodule Headwater.AggregateDirectory do
   end
 
   defmodule Result do
-    @enforce_keys [:event_id, :state]
+    @enforce_keys [:aggregate_id, :event_id, :state]
     defstruct @enforce_keys
 
-    def new({:ok, {latest_event_id, state}}) do
+    def new({:ok, {latest_event_id, state}}, aggregate_id) do
       {:ok,
        %Result{
          event_id: latest_event_id,
-         state: state
+         state: state,
+         aggregate_id: aggregate_id
        }}
     end
 
@@ -51,7 +52,7 @@ defmodule Headwater.AggregateDirectory do
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
-        |> Headwater.AggregateDirectory.Result.new()
+        |> Headwater.AggregateDirectory.Result.new(request.aggregate_id)
       end
 
       def read_state(request = %ReadRequest{}) do
@@ -64,7 +65,7 @@ defmodule Headwater.AggregateDirectory do
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.current_state()
-        |> Headwater.AggregateDirectory.Result.new()
+        |> Headwater.AggregateDirectory.Result.new(request.aggregate_id)
       end
 
       defp ensure_started(aggregate) do
