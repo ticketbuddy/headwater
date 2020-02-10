@@ -35,11 +35,11 @@ defmodule Headwater.AggregateDirectory do
        }}
     end
 
-    def new({:error, :execute, response}) do
+    def new({:error, :execute, response}, _aggregate_id) do
       response
     end
 
-    def new({:error, :next_state, response}) do
+    def new({:error, :next_state, response}, _aggregate_id) do
       response
     end
 
