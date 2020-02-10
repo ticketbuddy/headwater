@@ -16,6 +16,16 @@ defmodule Headwater.AggregateDirectory do
     @derive {Jason.Encoder, only: [:state]}
     defstruct [:aggregate_id, :event_id, :state]
 
+    def new({:ok, {latest_event_id = 0, state = nil}}, aggregate_id) do
+      result = %Result{
+        event_id: latest_event_id,
+        state: state,
+        aggregate_id: aggregate_id
+      }
+
+      {:warn, {:empty_aggregate, result}}
+    end
+
     def new({:ok, {latest_event_id, state}}, aggregate_id) do
       {:ok,
        %Result{

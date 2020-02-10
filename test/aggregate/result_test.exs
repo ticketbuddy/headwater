@@ -14,4 +14,22 @@ defmodule Headwater.AggregateDirectory.ResultTest do
 
     assert {:ok, ~s({"age":23,"name":"James"})} == Jason.encode(output)
   end
+
+  test "when the aggregate is empty" do
+    latest_event_id = 0
+    state = nil
+    aggregate_id = "agg-12345"
+
+    assert {:warn,
+            {:empty_aggregate,
+             %Headwater.AggregateDirectory.Result{
+               event_id: 0,
+               state: nil,
+               aggregate_id: "agg-12345"
+             }}} ==
+             Headwater.AggregateDirectory.Result.new(
+               {:ok, {latest_event_id, state}},
+               aggregate_id
+             )
+  end
 end
