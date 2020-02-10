@@ -32,4 +32,16 @@ defmodule Headwater.AggregateDirectory.ResultTest do
                aggregate_id
              )
   end
+
+  test "returns business logic error when next_state/2 fails" do
+    assert {:error, :not_enough_sass} ==
+             Headwater.AggregateDirectory.Result.new(
+               {:error, :next_state, {:error, :not_enough_sass}}
+             )
+  end
+
+  test "returns business logic error when execute/2 fails" do
+    assert {:error, :too_much_sass} ==
+             Headwater.AggregateDirectory.Result.new({:error, :execute, {:error, :too_much_sass}})
+  end
 end

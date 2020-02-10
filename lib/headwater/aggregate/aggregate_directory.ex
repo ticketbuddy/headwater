@@ -35,13 +35,13 @@ defmodule Headwater.AggregateDirectory do
        }}
     end
 
-    # def new({:error, :execute, response}) do
-    #   {:error, response}
-    # end
-    #
-    # def new({:error, :next_state, response}) do
-    #
-    # end
+    def new({:error, :execute, response}) do
+      response
+    end
+
+    def new({:error, :next_state, response}) do
+      response
+    end
 
     defimpl Jason.Encoder, for: [Headwater.AggregateDirectory.Result] do
       def encode(struct, opts) do
