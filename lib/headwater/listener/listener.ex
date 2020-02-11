@@ -3,6 +3,8 @@ defmodule Headwater.Listener do
   Reading events from an event aggregate.
   """
 
+  @callback check_for_new_data() :: :ok
+
   defmacro __using__(
              from_event_ref: from_event_ref,
              event_store: event_store,
@@ -10,7 +12,7 @@ defmodule Headwater.Listener do
              handlers: handlers
            ) do
     quote do
-      defmodule Producer do
+      defmodule Provider do
         use Headwater.Listener.Provider,
           from_event_ref: unquote(from_event_ref),
           event_store: unquote(event_store),
@@ -19,13 +21,19 @@ defmodule Headwater.Listener do
 
       defmodule Consumer do
         use Headwater.Listener.Consumer,
-          provider: Producer,
+          provider: Provider,
           retry_limit: 5,
           handlers: unquote(handlers)
       end
 
+      def check_for_new_data do
+        send(Provider, :check_for_new_data)
+
+        :ok
+      end
+
       def children do
-        [Producer, Consumer]
+        [Provider, Consumer]
       end
     end
   end

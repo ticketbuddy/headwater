@@ -50,11 +50,18 @@ defmodule Headwater.AggregateDirectory do
     end
   end
 
-  defmacro __using__(registry: registry, supervisor: supervisor, event_store: event_store) do
+  defmacro __using__(opts) do
+    registry = Keyword.get(opts, :registry)
+    event_store = Keyword.get(opts, :event_store)
+    supervisor = Keyword.get(opts, :supervisor)
+
+    listeners = List.wrap(Keyword.get(opts, :listeners, []))
+
     quote do
       @registry unquote(registry)
       @supervisor unquote(supervisor)
       @event_store unquote(event_store)
+      @listeners unquote(listeners)
 
       use Headwater.Aggregate.Expand, aggregate_directory: __MODULE__
 
@@ -69,6 +76,7 @@ defmodule Headwater.AggregateDirectory do
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
         |> Headwater.AggregateDirectory.Result.new(request.aggregate_id)
+        |> notify_listeners()
       end
 
       def read_state(request = %ReadRequest{}) do
@@ -88,6 +96,18 @@ defmodule Headwater.AggregateDirectory do
         Headwater.Aggregate.AggregateWorker.new(aggregate)
 
         aggregate
+      end
+
+      defp notify_listeners(result) do
+        case result do
+          {:ok, %Headwater.AggregateDirectory.Result{}} ->
+            Enum.each(@listeners, & &1.check_for_new_data())
+
+          _ ->
+            :ok
+        end
+
+        result
       end
     end
   end

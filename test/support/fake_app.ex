@@ -24,7 +24,8 @@ defmodule FakeApp.Headwater.AggregateDirectory do
   use Headwater.AggregateDirectory,
     registry: FakeApp.Registry,
     supervisor: FakeApp.AggregateSupervisor,
-    event_store: FakeApp.EventStoreMock
+    event_store: FakeApp.EventStoreMock,
+    listeners: Headwater.ListenerMock
 end
 
 defmodule FakeApp.Router do

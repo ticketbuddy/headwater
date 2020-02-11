@@ -9,6 +9,7 @@ defmodule Headwater.Aggregate.AggregateTest do
 
   setup do
     Mox.stub_with(Headwater.Aggregate.HandlerMock, Headwater.Aggregate.HandlerStub)
+    Mox.stub_with(Headwater.ListenerMock, Headwater.ListenerStub)
     :ok
   end
 
@@ -146,7 +147,7 @@ defmodule Headwater.Aggregate.AggregateTest do
       :ok
     end
 
-    test "loads events and commits successful event to the event store" do
+    test "loads events and commits successful event to the event store & notifies listeners" do
       idempotency_key = Headwater.uuid()
 
       FakeApp.EventStoreMock
@@ -170,6 +171,11 @@ defmodule Headwater.Aggregate.AggregateTest do
       Headwater.Aggregate.HandlerMock
       |> expect(:next_state, fn nil, %FakeApp.PointScored{} ->
         %FakeApp{}
+      end)
+
+      Headwater.ListenerMock
+      |> expect(:check_for_new_data, fn ->
+        :ok
       end)
 
       %WriteRequest{

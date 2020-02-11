@@ -55,7 +55,7 @@ defmodule Headwater.Listener.ListenerTest do
       :ok
     end)
 
-    FakeAppListener.Producer.start_link([])
+    FakeAppListener.Provider.start_link([])
     FakeAppListener.Consumer.start_link([])
 
     assert_receive(:bus_has_completed_event_ref, 500)
