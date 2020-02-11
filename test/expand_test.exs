@@ -7,22 +7,32 @@ defmodule Headwater.ExpandTest do
 
   defmodule ToBeExpanded do
     defstruct people: ["one", "two", "three"], last_login: "login-id-5"
+
+    def aggregate_prefix, do: ""
   end
 
   defmodule Person do
     defstruct name: "James", age: 23, accounts: ["abc", "def"]
+
+    def aggregate_prefix, do: ""
   end
 
   defmodule Account do
     defstruct id: "account-123"
+
+    def aggregate_prefix, do: ""
   end
 
   defmodule EmptyStatePerson do
     defstruct name: "James", age: 23, accounts: ["abc", "def"]
+
+    def aggregate_prefix, do: ""
   end
 
   defmodule Login do
     defstruct time: "2019"
+
+    def aggregate_prefix, do: "login_"
   end
 
   defmodule ModuleWithExpandLogic do
@@ -33,7 +43,7 @@ defmodule Headwater.ExpandTest do
     Headwater.AggregateMock
     |> stub(:read_state, fn
       %Headwater.AggregateDirectory.ReadRequest{
-        aggregate_id: "login-id-5",
+        aggregate_id: "login_login-id-5",
         handler: Headwater.ExpandTest.Login
       } ->
         {:ok, %{state: %Headwater.ExpandTest.Login{}}}

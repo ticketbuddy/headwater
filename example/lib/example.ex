@@ -9,9 +9,9 @@ defmodule Example do
   use Headwater.Aggregate.Router, aggregate_directory: Example.Headwater.AggregateDirectory
 
   defaction(:inc, to: Example.Counter, by_key: :counter_id)
-  defaction(:reduce, to: Example.Reducer, by_key: :counter_id, with_prefix: "reducer_")
+  defaction(:reduce, to: Example.Reducer, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)
-  defread(:read_reducer, to: Example.Reducer, with_prefix: "reducer_")
+  defread(:read_reducer, to: Example.Reducer)
 end
 
 defmodule Example.Printer do

@@ -43,7 +43,7 @@ defmodule Headwater.Aggregate.Expand do
         output =
           case @aggregate_directory.read_state(%Headwater.AggregateDirectory.ReadRequest{
                  handler: handler,
-                 aggregate_id: id
+                 aggregate_id: handler.aggregate_prefix <> id
                }) do
             {:ok, output} -> output
             {:warn, {:empty_aggregate, result}} -> result

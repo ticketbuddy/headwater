@@ -9,6 +9,8 @@ end
 defmodule Example.Counter do
   defstruct [:total]
 
+  def aggregate_prefix, do: ""
+
   def execute(current_state, wish) do
     {:ok, %Example.Incremented{increment_by: wish.increment_by}}
   end

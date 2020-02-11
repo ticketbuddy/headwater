@@ -9,6 +9,8 @@ end
 defmodule Example.Reducer do
   defstruct [:counter_id, :total]
 
+  def aggregate_prefix, do: "reducer_"
+
   def execute(current_state, wish) do
     {:ok, %Example.Reduced{counter_id: wish.counter_id, reduce_by: wish.reduce_by}}
   end

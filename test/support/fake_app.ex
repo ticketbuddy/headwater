@@ -1,4 +1,6 @@
 defmodule FakeApp do
+  def aggregate_prefix, do: ""
+
   defstruct total: 0, game_id: "game-one"
 
   defmodule ScorePoint do
