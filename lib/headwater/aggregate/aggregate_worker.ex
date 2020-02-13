@@ -76,11 +76,11 @@ defmodule Headwater.Aggregate.AggregateWorker do
           last_event_id: last_event_id
         }
       ) do
-    with {:ok, new_event} <- execute_wish_on_aggregate(aggregate, aggregate_state, wish),
+    with {:ok, new_events} <- execute_wish_on_aggregate(aggregate, aggregate_state, wish),
          {:ok, new_aggregate_state} <-
-           next_state_for_aggregate(aggregate, aggregate_state, new_event),
+           next_state_for_aggregate(aggregate, aggregate_state, new_events),
          {:ok, latest_event_id} <-
-           aggregate.event_store.commit!(aggregate_id, last_event_id, new_event, idempotency_key) do
+           aggregate.event_store.commit!(aggregate_id, last_event_id, new_events, idempotency_key) do
       updated_state = %{
         aggregate: aggregate,
         aggregate_state: new_aggregate_state,
@@ -105,15 +105,22 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
   defp execute_wish_on_aggregate(aggregate, aggregate_state, wish) do
     case aggregate.handler.execute(aggregate_state, wish) do
-      {:ok, event} -> {:ok, event}
+      {:ok, event} -> {:ok, List.wrap(event)}
       result -> {:error, :execute, result}
     end
   end
 
-  defp next_state_for_aggregate(aggregate, aggregate_state, new_event) do
+  defp next_state_for_aggregate(_aggregate, aggregate_state, []) do
+    {:ok, aggregate_state}
+  end
+
+  defp next_state_for_aggregate(aggregate, aggregate_state, [new_event | next_events]) do
     case aggregate.handler.next_state(aggregate_state, new_event) do
-      response = {:error, reason} -> {:error, :next_state, response}
-      new_aggregate_state -> {:ok, new_aggregate_state}
+      response = {:error, reason} ->
+        {:error, :next_state, response}
+
+      new_aggregate_state ->
+        next_state_for_aggregate(aggregate, new_aggregate_state, next_events)
     end
   end
 

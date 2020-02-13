@@ -33,4 +33,18 @@ defmodule ExampleTest do
               aggregate_id: "first-counter"
             }} == Example.read_counter("first-counter")
   end
+
+  test "asks for a wish, that returns two events" do
+    assert {:ok,
+            %Headwater.AggregateDirectory.Result{
+              state: %Example.Counter{total: 8},
+              event_id: 2,
+              aggregate_id: "first-multi-counter"
+            }} ==
+             Example.inc(%Example.MultiIncrement{
+               counter_id: "first-multi-counter",
+               increment_by: 5,
+               increment_again: 3
+             })
+  end
 end

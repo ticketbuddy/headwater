@@ -2,6 +2,10 @@ defmodule Example.Increment do
   defstruct [:counter_id, :increment_by]
 end
 
+defmodule Example.MultiIncrement do
+  defstruct [:counter_id, :increment_by, :increment_again]
+end
+
 defmodule Example.Incremented do
   defstruct [:counter_id, :increment_by]
 end
@@ -11,7 +15,15 @@ defmodule Example.Counter do
 
   def aggregate_prefix, do: ""
 
-  def execute(current_state, wish) do
+  def execute(current_state, wish = %Example.MultiIncrement{}) do
+    {:ok,
+     [
+       %Example.Incremented{increment_by: wish.increment_by},
+       %Example.Incremented{increment_by: wish.increment_again}
+     ]}
+  end
+
+  def execute(current_state, wish = %Example.Increment{}) do
     {:ok, %Example.Incremented{increment_by: wish.increment_by}}
   end
 

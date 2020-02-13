@@ -52,7 +52,7 @@ defmodule Headwater.Aggregate.AggregateTest do
       end)
 
       Headwater.EventStoreMock
-      |> expect(:commit!, fn @aggregate_id, last_event_id = 3, @event, @idempotency_key ->
+      |> expect(:commit!, fn @aggregate_id, last_event_id = 3, [@event], @idempotency_key ->
         {:ok, 4}
       end)
 
@@ -158,7 +158,7 @@ defmodule Headwater.Aggregate.AggregateTest do
       FakeApp.EventStoreMock
       |> expect(:commit!, fn "game-one",
                              last_event_id = 0,
-                             events = %FakeApp.PointScored{},
+                             events = [%FakeApp.PointScored{}],
                              ^idempotency_key ->
         {:ok, 1}
       end)
