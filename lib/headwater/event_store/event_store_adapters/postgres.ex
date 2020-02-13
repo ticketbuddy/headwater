@@ -5,41 +5,68 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       @repo unquote(repo)
       alias Ecto.Multi
 
+      require Logger
+
       alias Headwater.EventStoreAdapters.Postgres.{
         HeadwaterEventsSchema,
-        HeadwaterEventBusSchema
+        HeadwaterEventBusSchema,
+        HeadwaterIdempotencySchema
       }
 
       @impl Headwater.EventStore
-      def commit!(aggregate_id, last_event_id, event, idempotency_key) do
-        new_event_id = last_event_id + 1
+      def commit!(aggregate_id, last_event_id, events, idempotency_key) do
+        new_event_id = last_event_id + Enum.count(events)
 
-        case insert_event(aggregate_id, event, new_event_id, idempotency_key) do
+        case insert_events(aggregate_id, events, new_event_id, idempotency_key) do
           {:ok, _} ->
             {:ok, new_event_id}
 
           error ->
+            Logger.log(:error, "Commit error: #{inspect(error)}")
             handle_insert_error!(error)
         end
       end
 
-      defp insert_event(aggregate_id, event, latest_event_id, idempotency_key) do
-        serialised_event = Headwater.EventStore.EventSerializer.serialize(event)
+      defp insert_events(aggregate_id, events, latest_event_id, idempotency_key) do
+        # TODO: idempotency_key will prevent this from working...
 
-        %{
-          event_id: latest_event_id,
-          aggregate_id: aggregate_id,
-          event: serialised_event,
-          idempotency_key: idempotency_key
-        }
-        |> HeadwaterEventsSchema.changeset()
-        |> @repo.insert()
+        events = List.wrap(events)
+
+        multi_with_idempotency =
+          Multi.new()
+          |> Multi.insert(
+            :idempotency_check,
+            HeadwaterIdempotencySchema.changeset(%{idempotency_key: idempotency_key})
+          )
+
+        events
+        |> Enum.with_index()
+        |> Enum.reduce(multi_with_idempotency, fn {event, index}, multi ->
+          serialised_event = Headwater.EventStore.EventSerializer.serialize(event)
+          event_id = latest_event_id + index
+
+          multi
+          |> Multi.insert(:"event_#{event_id}", fn %{idempotency_check: idempotency_check} ->
+            %{
+              event_id: event_id + index,
+              aggregate_id: aggregate_id,
+              event: serialised_event,
+              idempotency_id: idempotency_check.id
+            }
+            |> HeadwaterEventsSchema.changeset()
+          end)
+        end)
+        |> @repo.transaction()
       end
 
-      defp handle_insert_error!({:error, %Ecto.Changeset{errors: errors}}) do
+      defp handle_insert_error!({:error, error = %Ecto.Changeset{errors: errors}}) do
         case Keyword.has_key?(errors, :wish_already_completed) do
-          true -> {:error, :wish_already_completed}
-          false -> out_of_sync!
+          true ->
+            {:error, :wish_already_completed}
+
+          false ->
+            Logger.log(:error, "Insert changeset error: #{inspect(error)}")
+            out_of_sync!
         end
       end
 
@@ -73,7 +100,7 @@ defmodule Headwater.EventStoreAdapters.Postgres do
 
       @impl Headwater.EventStore
       def has_wish_previously_succeeded?(idempotency_key) do
-        @repo.get_by(HeadwaterEventsSchema, idempotency_key: idempotency_key)
+        @repo.get_by(HeadwaterIdempotencySchema, idempotency_key: idempotency_key)
         |> case do
           nil -> false
           _ -> true

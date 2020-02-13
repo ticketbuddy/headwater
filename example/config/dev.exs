@@ -1,5 +1,7 @@
 import Mix.Config
 
+config :logger, level: :warn
+
 config :headwater,
   supervisor: Example.AggregateSupervisor,
   registry: Example.Registry

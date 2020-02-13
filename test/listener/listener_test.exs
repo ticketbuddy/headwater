@@ -33,7 +33,7 @@ defmodule Headwater.Listener.ListenerTest do
           event_id: 1,
           event_ref: 1,
           aggregate_id: "game-one",
-          idempotency_key: "f3e9ee81b8cd4283a40a4093b3ed551b",
+          idempotency_id: 1,
           event: fake_event,
           inserted_at: ~U[2010-10-10 10:10:10Z]
         }
