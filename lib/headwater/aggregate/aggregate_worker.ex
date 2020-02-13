@@ -3,6 +3,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
   defstruct @enforce_keys
 
   use GenServer
+  alias Headwater.Aggregate.{NextState, ExecuteWish}
 
   @moduledoc """
   Start a new aggregate
@@ -47,11 +48,16 @@ defmodule Headwater.Aggregate.AggregateWorker do
   # Server callbacks
 
   def handle_call({:load_state_from_events, aggregate_id}, _from, state = %{aggregate: aggregate}) do
+    # TODO: EventStore.load/1 loads all the events into memory
+    # before processing them to obtain the next state.
+    # There must be a more efficient way of doing this...
+
     {:ok, events, last_event_id} = aggregate.event_store.load(aggregate.id)
+    {:ok, aggregate_state} = NextState.process(aggregate, nil, events)
 
     state = %{
       aggregate: aggregate,
-      aggregate_state: reduce_events_to_state(aggregate, events),
+      aggregate_state: aggregate_state,
       last_event_id: last_event_id
     }
 
@@ -76,9 +82,9 @@ defmodule Headwater.Aggregate.AggregateWorker do
           last_event_id: last_event_id
         }
       ) do
-    with {:ok, new_events} <- execute_wish_on_aggregate(aggregate, aggregate_state, wish),
+    with {:ok, new_events} <- ExecuteWish.process(aggregate, aggregate_state, wish),
          {:ok, new_aggregate_state} <-
-           next_state_for_aggregate(aggregate, aggregate_state, new_events),
+           NextState.process(aggregate, aggregate_state, new_events),
          {:ok, latest_event_id} <-
            aggregate.event_store.commit!(aggregate_id, last_event_id, new_events, idempotency_key) do
       updated_state = %{
@@ -101,32 +107,6 @@ defmodule Headwater.Aggregate.AggregateWorker do
       error = {:error, :next_state, _} ->
         {:reply, error, state}
     end
-  end
-
-  defp execute_wish_on_aggregate(aggregate, aggregate_state, wish) do
-    case aggregate.handler.execute(aggregate_state, wish) do
-      {:ok, event} -> {:ok, List.wrap(event)}
-      result -> {:error, :execute, result}
-    end
-  end
-
-  defp next_state_for_aggregate(_aggregate, aggregate_state, []) do
-    {:ok, aggregate_state}
-  end
-
-  defp next_state_for_aggregate(aggregate, aggregate_state, [new_event | next_events]) do
-    case aggregate.handler.next_state(aggregate_state, new_event) do
-      response = {:error, reason} ->
-        {:error, :next_state, response}
-
-      new_aggregate_state ->
-        next_state_for_aggregate(aggregate, new_aggregate_state, next_events)
-    end
-  end
-
-  defp reduce_events_to_state(aggregate, events) do
-    events
-    |> Enum.reduce(nil, &aggregate.handler.next_state(&2, &1.event))
   end
 
   defp has_wish_previously_succeeded?(aggregate, idempotency_key) do
