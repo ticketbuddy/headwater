@@ -19,10 +19,15 @@ defmodule Headwater.EventStoreAdapters.Postgres do
 
         case insert_events(aggregate_id, events, new_event_id, idempotency_key) do
           {:ok, _} ->
+            Logger.log(
+              :info,
+              "committed #{Enum.count(events)} events on aggregate: #{aggregate_id}"
+            )
+
             {:ok, new_event_id}
 
           error ->
-            Logger.log(:error, "Commit error: #{inspect(error)}")
+            Logger.log(:error, "commit error: #{inspect(error)}")
             handle_insert_error!(error)
         end
       end
@@ -62,6 +67,7 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       defp handle_insert_error!({:error, error = %Ecto.Changeset{errors: errors}}) do
         case Keyword.has_key?(errors, :wish_already_completed) do
           true ->
+            Logger.log(:info, "wish already completed.")
             {:error, :wish_already_completed}
 
           false ->
@@ -87,6 +93,8 @@ defmodule Headwater.EventStoreAdapters.Postgres do
 
       @impl Headwater.EventStore
       def read_events(from_event_ref: event_ref, limit: limit) do
+        Logger.log(:info, "fetching next #{limit} events from event_ref #{event_ref}.")
+
         import Ecto.Query, only: [from: 2]
 
         from(event in HeadwaterEventsSchema,
@@ -136,6 +144,8 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       end
 
       defp fetch_events(aggregate_id) do
+        Logger.log(:info, "fetching all events for aggregate #{aggregate_id}.")
+
         import Ecto.Query, only: [from: 2]
 
         from(event in HeadwaterEventsSchema,

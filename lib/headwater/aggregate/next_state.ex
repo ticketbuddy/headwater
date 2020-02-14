@@ -4,6 +4,9 @@ defmodule Headwater.Aggregate.NextState do
   end
 
   def process(aggregate, aggregate_state, [new_event | next_events]) do
+    require Logger
+    Logger.log(:info, "#{aggregate.handler}.next_state/2 for #{new_event.__struct__}")
+
     case aggregate.handler.next_state(aggregate_state, new_event) do
       response = {:error, reason} ->
         {:error, :next_state, response}
