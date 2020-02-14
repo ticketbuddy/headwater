@@ -52,7 +52,9 @@ defmodule Headwater.Listener.Consumer do
         handle_result =
           @handlers
           |> Enum.all?(fn handler ->
-            case handler.handle_event(event.event, event_notes(event)) do
+            notes = event_notes(handler, event)
+
+            case handler.handle_event(event.event, notes) do
               :ok -> true
               {:ok, _} -> true
               _other_result -> false
@@ -69,17 +71,17 @@ defmodule Headwater.Listener.Consumer do
         end
       end
 
-      defp event_notes(event) do
+      defp event_notes(handler, event) do
         %{
           event_ref: event.event_ref,
           aggregate_id: event.aggregate_id,
-          effect_idempotent_key: build_causation_idempotency_key(event),
+          effect_idempotent_key: build_causation_idempotency_key(handler, event),
           event_occurred_at: event.inserted_at
         }
       end
 
-      defp build_causation_idempotency_key(event) do
-        (Integer.to_string(event.event_ref) <> event.aggregate_id)
+      defp build_causation_idempotency_key(handler, event) do
+        (handler.listener_prefix() <> Integer.to_string(event.event_ref) <> event.aggregate_id)
         |> Headwater.Listener.web_safe_md5()
       end
 

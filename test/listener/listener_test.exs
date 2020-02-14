@@ -55,6 +55,9 @@ defmodule Headwater.Listener.ListenerTest do
       :ok
     end)
 
+    FakeApp.PrinterMock
+    |> expect(:listener_prefix, fn -> "a_listener_prefix_" end)
+
     FakeAppListener.Provider.start_link([])
     FakeAppListener.Consumer.start_link([])
 
