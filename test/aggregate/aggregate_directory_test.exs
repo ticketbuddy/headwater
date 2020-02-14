@@ -2,6 +2,7 @@ defmodule Headwater.Aggregate.AggregateTest do
   use ExUnit.Case
   alias Headwater.Aggregate.AggregateWorker
   alias Headwater.AggregateDirectory.WriteRequest
+  alias Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema
 
   import Mox
   setup :set_mox_global
@@ -152,25 +153,38 @@ defmodule Headwater.Aggregate.AggregateTest do
 
       FakeApp.EventStoreMock
       |> expect(:load, fn "game-one" ->
-        {:ok, [], 0}
+        {:ok,
+         [
+           %HeadwaterEventsSchema{
+             aggregate_id: "game-one",
+             event: %FakeApp.PointScored{},
+             event_ref: 1,
+             event_id: 1
+           }
+         ], 1}
       end)
 
       FakeApp.EventStoreMock
       |> expect(:commit!, fn "game-one",
-                             last_event_id = 0,
+                             last_event_id = 1,
                              events = [%FakeApp.PointScored{}],
                              ^idempotency_key ->
-        {:ok, 1}
+        {:ok, 2}
       end)
 
       Headwater.Aggregate.HandlerMock
-      |> expect(:execute, fn nil, %FakeApp.ScorePoint{} ->
+      |> expect(:execute, fn state, %FakeApp.ScorePoint{} ->
         {:ok, %FakeApp.PointScored{}}
       end)
 
       Headwater.Aggregate.HandlerMock
       |> expect(:next_state, fn nil, %FakeApp.PointScored{} ->
-        %FakeApp{}
+        %FakeApp{total: 1}
+      end)
+
+      Headwater.Aggregate.HandlerMock
+      |> expect(:next_state, fn %FakeApp{}, %FakeApp.PointScored{} ->
+        %FakeApp{total: 1}
       end)
 
       Headwater.ListenerMock

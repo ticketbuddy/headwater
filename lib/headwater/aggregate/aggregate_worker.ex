@@ -53,7 +53,10 @@ defmodule Headwater.Aggregate.AggregateWorker do
     # There must be a more efficient way of doing this...
 
     {:ok, events, last_event_id} = aggregate.event_store.load(aggregate.id)
-    {:ok, aggregate_state} = NextState.process(aggregate, nil, events)
+
+    business_domain_events = get_in(events, [Access.all(), Access.key(:event)])
+
+    {:ok, aggregate_state} = NextState.process(aggregate, nil, business_domain_events)
 
     state = %{
       aggregate: aggregate,
