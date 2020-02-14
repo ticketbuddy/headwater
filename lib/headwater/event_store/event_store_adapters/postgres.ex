@@ -33,8 +33,6 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       end
 
       defp insert_events(aggregate_id, events, latest_event_id, idempotency_key) do
-        # TODO: idempotency_key will prevent this from working...
-
         events = List.wrap(events)
 
         multi_with_idempotency =
@@ -76,7 +74,8 @@ defmodule Headwater.EventStoreAdapters.Postgres do
         end
       end
 
-      defp handle_insert_error!(_) do
+      defp handle_insert_error!(error) do
+        Logger.log(:error, "insert error #{inspect(error)}")
         out_of_sync!
       end
 
