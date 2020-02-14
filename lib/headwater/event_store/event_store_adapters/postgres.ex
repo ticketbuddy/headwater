@@ -26,9 +26,20 @@ defmodule Headwater.EventStoreAdapters.Postgres do
 
             {:ok, new_event_id}
 
+          {:error, :idempotency_check, error = %Ecto.Changeset{errors: errors}, _changes} ->
+            case Keyword.has_key?(errors, :wish_already_completed) do
+              true ->
+                Logger.log(:info, "idempotency_key already used")
+                {:error, :wish_already_completed}
+
+              false ->
+                Logger.log(:error, "inserting idempotency_key failed: #{inspect(error)}")
+                {:error, :commit_error}
+            end
+
           error ->
             Logger.log(:error, "commit error: #{inspect(error)}")
-            handle_insert_error!(error)
+            {:error, :commit_error}
         end
       end
 
@@ -60,27 +71,6 @@ defmodule Headwater.EventStoreAdapters.Postgres do
           end)
         end)
         |> @repo.transaction()
-      end
-
-      defp handle_insert_error!({:error, error = %Ecto.Changeset{errors: errors}}) do
-        case Keyword.has_key?(errors, :wish_already_completed) do
-          true ->
-            Logger.log(:info, "wish already completed.")
-            {:error, :wish_already_completed}
-
-          false ->
-            Logger.log(:error, "Insert changeset error: #{inspect(error)}")
-            out_of_sync!
-        end
-      end
-
-      defp handle_insert_error!(error) do
-        Logger.log(:error, "insert error #{inspect(error)}")
-        out_of_sync!
-      end
-
-      defp out_of_sync! do
-        raise "Out of sync with database, crashing to reload"
       end
 
       @impl Headwater.EventStore

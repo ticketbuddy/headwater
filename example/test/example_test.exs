@@ -47,4 +47,26 @@ defmodule ExampleTest do
                increment_again: 3
              })
   end
+
+  test "when subsequent wishes have used idempotency key" do
+    idempotency_key = "idempo-12345"
+
+    expected_result =
+      {:ok,
+       %Headwater.AggregateDirectory.Result{
+         aggregate_id: "idempotent-counter",
+         event_id: 1,
+         state: %Example.Counter{total: 1}
+       }}
+
+    assert expected_result ==
+             Example.inc(%Example.Increment{counter_id: "idempotent-counter", increment_by: 1},
+               idempotency_key: idempotency_key
+             )
+
+    assert expected_result ==
+             Example.inc(%Example.Increment{counter_id: "idempotent-counter", increment_by: 1},
+               idempotency_key: idempotency_key
+             )
+  end
 end
