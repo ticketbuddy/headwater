@@ -14,7 +14,7 @@ defmodule Headwater.EventStoreAdapters.Postgres.HeadwaterIdempotencySchema do
     |> cast(params, [:idempotency_key])
     |> validate_required([:idempotency_key])
     |> unique_constraint(:wish_already_completed,
-      name: :headwater_events_idempotency_key_index
+      name: :headwater_idempotency_idempotency_key_index
     )
   end
 end
