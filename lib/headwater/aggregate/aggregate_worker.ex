@@ -4,6 +4,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
   use GenServer
   alias Headwater.Aggregate.{NextState, ExecuteWish}
+  require Logger
 
   @moduledoc """
   Start a new aggregate
@@ -73,6 +74,13 @@ defmodule Headwater.Aggregate.AggregateWorker do
         _from,
         state = %{last_event_id: last_event_id, aggregate_state: aggregate_state}
       ) do
+    Logger.log(
+      :debug,
+      "returning aggregate state. last_event_id: #{last_event_id}. state: #{
+        inspect(aggregate_state)
+      }"
+    )
+
     {:reply, {:ok, {last_event_id, aggregate_state}}, state}
   end
 
@@ -85,11 +93,27 @@ defmodule Headwater.Aggregate.AggregateWorker do
           last_event_id: last_event_id
         }
       ) do
+    Logger.log(
+      :debug,
+      "aggregate #{aggregate_id}, received wish #{inspect(wish)} with idempotency_key #{
+        idempotency_key
+      }."
+    )
+
     with {:ok, new_events} <- ExecuteWish.process(aggregate, aggregate_state, wish),
          {:ok, new_aggregate_state} <-
            NextState.process(aggregate, aggregate_state, new_events),
          {:ok, latest_event_id} <-
            aggregate.event_store.commit!(aggregate_id, last_event_id, new_events, idempotency_key) do
+      Logger.log(
+        :debug,
+        "aggregate #{aggregate_id} state updated. event ID increased from #{last_event_id} to #{
+          latest_event_id
+        }, with #{inspect(Enum.count(new_events))} events #{inspect(new_events)} with idempotency_key #{
+          idempotency_key
+        }."
+      )
+
       updated_state = %{
         aggregate: aggregate,
         aggregate_state: new_aggregate_state,
