@@ -17,7 +17,6 @@ defmodule Headwater.AggregateDirectory.ResultTest do
 
   test "when the aggregate is empty" do
     latest_event_id = 0
-    event_ref = 738
     state = nil
     aggregate_id = "agg-12345"
 
@@ -29,7 +28,7 @@ defmodule Headwater.AggregateDirectory.ResultTest do
                aggregate_id: "agg-12345"
              }}} ==
              Headwater.AggregateDirectory.Result.new(
-               {:ok, {event_ref, latest_event_id, state}},
+               {:ok, {latest_event_id, state}},
                aggregate_id
              )
   end
