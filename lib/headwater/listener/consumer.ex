@@ -85,7 +85,16 @@ defmodule Headwater.Listener.Consumer do
         |> Headwater.Listener.web_safe_md5()
       end
 
-      defp event_handler_callback!(_event, _attempt) do
+      defp event_handler_callback!(event, attempt) do
+        require Logger
+
+        Logger.log(
+          :error,
+          "Listener, max retry limit reached, on attempt #{attempt}/#{@retry_limit}. Trying to handle the event: #{
+            inspect(event)
+          }"
+        )
+
         raise "Max retry limit reached"
       end
 
