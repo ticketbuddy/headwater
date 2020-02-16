@@ -44,15 +44,39 @@ defmodule Headwater.Listener.Provider do
 
       @impl true
       def handle_demand(demand, state) do
-        Logger.log(:info, "Provider handling demand for up to #{demand} new events, from event ref #{state}.")
+        Logger.log(
+          :info,
+          "Provider handling demand for up to #{demand} new events, from event ref #{state}."
+        )
+
         read_new_events(state, limit: demand)
       end
 
       @impl true
-      def handle_info(:check_for_new_data, state) do
+      def handle_info({:check_for_new_data, up_to_event_ref}, state) do
+        # TODO: also get the event_ref, and compare to the
+        # event_ref held in the state.
         limit = 10
-        Logger.log(:info, "Provider checking for up to #{limit} new events, from event ref #{state}.")
-        read_new_events(state, limit: limit)
+
+        case up_to_event_ref > state do
+          true ->
+            Logger.log(
+              :info,
+              "Provider checking for up to #{limit} new events, from event ref #{state}."
+            )
+
+            read_new_events(state, limit: limit)
+
+          false ->
+            Logger.log(
+              :info,
+              "Provider not checking data. #{up_to_event_ref} is less than the currently processed #{
+                state
+              }."
+            )
+
+            {:noreply, [], state}
+        end
       end
 
       @impl true
@@ -74,6 +98,7 @@ defmodule Headwater.Listener.Provider do
           [] ->
             Logger.log(:info, "no new events, #{read_from} was the last")
             {:noreply, events, read_from}
+
           _not_empty ->
             last_event = List.last(events)
             Logger.log(:info, "read new events, up to #{last_event.event_ref}")

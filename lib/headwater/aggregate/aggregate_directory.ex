@@ -14,7 +14,7 @@ defmodule Headwater.AggregateDirectory do
 
   defmodule Result do
     @derive {Jason.Encoder, only: [:state]}
-    defstruct [:aggregate_id, :event_id, :state]
+    defstruct [:aggregate_id, :event_id, :event_ref, :state]
 
     def new({:ok, {latest_event_id = 0, state = nil}}, aggregate_id) do
       result = %Result{
@@ -26,12 +26,23 @@ defmodule Headwater.AggregateDirectory do
       {:warn, {:empty_aggregate, result}}
     end
 
+    def new({:ok, {event_ref, latest_event_id, state}}, aggregate_id) do
+      {:ok,
+       %Result{
+         event_id: latest_event_id,
+         state: state,
+         aggregate_id: aggregate_id,
+         event_ref: event_ref
+       }}
+    end
+
     def new({:ok, {latest_event_id, state}}, aggregate_id) do
       {:ok,
        %Result{
          event_id: latest_event_id,
          state: state,
-         aggregate_id: aggregate_id
+         aggregate_id: aggregate_id,
+         event_ref: :not_calculated
        }}
     end
 
@@ -100,10 +111,11 @@ defmodule Headwater.AggregateDirectory do
 
       defp notify_listeners(result) do
         require Logger
+
         case result do
-          {:ok, %Headwater.AggregateDirectory.Result{}} ->
+          {:ok, %Headwater.AggregateDirectory.Result{event_ref: event_ref}} ->
             Logger.log(:info, "Notifying listeners #{inspect(result)}")
-            Enum.each(@listeners, & &1.check_for_new_data())
+            Enum.each(@listeners, & &1.check_for_new_data(event_ref))
 
           _ ->
             :ok

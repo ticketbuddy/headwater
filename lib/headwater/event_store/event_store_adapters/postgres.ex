@@ -10,67 +10,18 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       alias Headwater.EventStoreAdapters.Postgres.{
         HeadwaterEventsSchema,
         HeadwaterEventBusSchema,
-        HeadwaterIdempotencySchema
+        HeadwaterIdempotencySchema,
+        Commit
       }
 
       @impl Headwater.EventStore
       def commit!(aggregate_id, last_event_id, events, idempotency_key) do
-        new_event_id = last_event_id + Enum.count(events)
-
-        case insert_events(aggregate_id, events, new_event_id, idempotency_key) do
-          {:ok, _} ->
-            Logger.log(
-              :info,
-              "committed #{Enum.count(events)} events on aggregate: #{aggregate_id}"
-            )
-
-            {:ok, new_event_id}
-
-          {:error, :idempotency_check, error = %Ecto.Changeset{errors: errors}, _changes} ->
-            case Keyword.has_key?(errors, :wish_already_completed) do
-              true ->
-                Logger.log(:info, "idempotency_key already used")
-                {:error, :wish_already_completed}
-
-              false ->
-                Logger.log(:error, "inserting idempotency_key failed: #{inspect(error)}")
-                {:error, :commit_error}
-            end
-
-          error ->
-            Logger.log(:error, "commit error: #{inspect(error)}")
-            {:error, :commit_error}
-        end
-      end
-
-      defp insert_events(aggregate_id, events, latest_event_id, idempotency_key) do
-        events = List.wrap(events)
-
-        multi_with_idempotency =
-          Multi.new()
-          |> Multi.insert(
-            :idempotency_check,
-            HeadwaterIdempotencySchema.changeset(%{idempotency_key: idempotency_key})
-          )
-
-        events
-        |> Enum.with_index()
-        |> Enum.reduce(multi_with_idempotency, fn {event, index}, multi ->
-          serialised_event = Headwater.EventStore.EventSerializer.serialize(event)
-          event_id = latest_event_id + index
-
-          multi
-          |> Multi.insert(:"event_#{event_id}", fn %{idempotency_check: idempotency_check} ->
-            %{
-              event_id: event_id + index,
-              aggregate_id: aggregate_id,
-              event: serialised_event,
-              idempotency_id: idempotency_check.id
-            }
-            |> HeadwaterEventsSchema.changeset()
-          end)
-        end)
+        Multi.new()
+        |> Commit.add_idempotency(idempotency_key)
+        |> Commit.add_inserts({aggregate_id, last_event_id, events})
+        |> Commit.add_results()
         |> @repo.transaction()
+        |> Commit.on_commit_result()
       end
 
       @impl Headwater.EventStore
