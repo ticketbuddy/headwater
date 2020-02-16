@@ -176,7 +176,7 @@ defmodule Headwater.Aggregate.AggregateTest do
         {:ok,
          %{
            latest_event_id: 2,
-           latest_event_ref: 2
+           latest_event_ref: 5
          }}
       end)
 
@@ -196,7 +196,7 @@ defmodule Headwater.Aggregate.AggregateTest do
       end)
 
       Headwater.ListenerMock
-      |> expect(:check_for_new_data, fn ->
+      |> expect(:check_for_new_data, fn 5 ->
         :ok
       end)
 

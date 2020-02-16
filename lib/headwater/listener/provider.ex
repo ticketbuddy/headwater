@@ -53,18 +53,30 @@ defmodule Headwater.Listener.Provider do
       end
 
       @impl true
-      def handle_info(:check_for_new_data, state) do
+      def handle_info({:check_for_new_data, up_to_event_ref}, state) do
         # TODO: also get the event_ref, and compare to the
         # event_ref held in the state.
-
         limit = 10
 
-        Logger.log(
-          :info,
-          "Provider checking for up to #{limit} new events, from event ref #{state}."
-        )
+        case up_to_event_ref > state do
+          true ->
+            Logger.log(
+              :info,
+              "Provider checking for up to #{limit} new events, from event ref #{state}."
+            )
 
-        read_new_events(state, limit: limit)
+            read_new_events(state, limit: limit)
+
+          false ->
+            Logger.log(
+              :info,
+              "Provider not checking data. #{up_to_event_ref} is less than the currently processed #{
+                state
+              }."
+            )
+
+            {:noreply, [], state}
+        end
       end
 
       @impl true

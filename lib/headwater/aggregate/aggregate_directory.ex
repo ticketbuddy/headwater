@@ -113,9 +113,9 @@ defmodule Headwater.AggregateDirectory do
         require Logger
 
         case result do
-          {:ok, %Headwater.AggregateDirectory.Result{}} ->
+          {:ok, %Headwater.AggregateDirectory.Result{event_ref: event_ref}} ->
             Logger.log(:info, "Notifying listeners #{inspect(result)}")
-            Enum.each(@listeners, & &1.check_for_new_data())
+            Enum.each(@listeners, & &1.check_for_new_data(event_ref))
 
           _ ->
             :ok
