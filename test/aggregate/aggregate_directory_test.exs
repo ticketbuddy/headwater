@@ -54,7 +54,11 @@ defmodule Headwater.Aggregate.AggregateTest do
 
       Headwater.EventStoreMock
       |> expect(:commit!, fn @aggregate_id, last_event_id = 3, [@event], @idempotency_key ->
-        {:ok, 4}
+        {:ok,
+         %{
+           latest_event_id: 4,
+           latest_event_ref: 4
+         }}
       end)
 
       assert {:reply, {:ok, {4, %FakeApp{total: 1}}},
@@ -169,7 +173,11 @@ defmodule Headwater.Aggregate.AggregateTest do
                              last_event_id = 1,
                              events = [%FakeApp.PointScored{}],
                              ^idempotency_key ->
-        {:ok, 2}
+        {:ok,
+         %{
+           latest_event_id: 2,
+           latest_event_ref: 2
+         }}
       end)
 
       Headwater.Aggregate.HandlerMock

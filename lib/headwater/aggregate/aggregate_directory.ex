@@ -100,6 +100,7 @@ defmodule Headwater.AggregateDirectory do
 
       defp notify_listeners(result) do
         require Logger
+
         case result do
           {:ok, %Headwater.AggregateDirectory.Result{}} ->
             Logger.log(:info, "Notifying listeners #{inspect(result)}")

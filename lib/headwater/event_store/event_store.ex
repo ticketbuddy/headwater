@@ -5,15 +5,20 @@ defmodule Headwater.EventStore do
 
   @type aggregate_id :: String.t()
   @type events :: List.t()
-  @type last_event_id :: String.t() | nil
-  @type latest_event_id :: String.t()
+  @type last_event_id :: integer()
+  @type latest_event_ref :: integer()
+  @type latest_event_id :: integer()
   @type event_ref :: integer()
   @type base_event_ref :: integer()
   @type idempotency_key :: String.t()
   @type bus_id :: String.t()
 
   @callback commit!(aggregate_id, last_event_id, events, idempotency_key) ::
-              {:ok, latest_event_id}
+              {:ok,
+               %{
+                 latest_event_id: latest_event_id,
+                 latest_event_ref: latest_event_ref
+               }}
 
   @callback load(aggregate_id) :: {:ok, events, last_event_id}
 

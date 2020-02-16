@@ -56,7 +56,10 @@ defmodule Headwater.Listener.Consumer do
           |> Enum.all?(fn {handler, handler_index} ->
             notes = event_notes(handler, event)
 
-            Logger.log(:info, "Calling listener handler #{handler}, #{handler_index}/#{@handler_count}")
+            Logger.log(
+              :info,
+              "Calling listener handler #{handler}, #{handler_index}/#{@handler_count}"
+            )
 
             case handler.handle_event(event.event, notes) do
               :ok -> true

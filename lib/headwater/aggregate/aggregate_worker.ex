@@ -103,7 +103,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
     with {:ok, new_events} <- ExecuteWish.process(aggregate, aggregate_state, wish),
          {:ok, new_aggregate_state} <-
            NextState.process(aggregate, aggregate_state, new_events),
-         {:ok, latest_event_id} <-
+         {:ok, %{latest_event_id: latest_event_id, latest_event_ref: latest_event_ref}} <-
            aggregate.event_store.commit!(aggregate_id, last_event_id, new_events, idempotency_key) do
       Logger.log(
         :debug,
