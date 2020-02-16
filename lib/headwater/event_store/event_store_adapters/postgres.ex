@@ -82,8 +82,6 @@ defmodule Headwater.EventStoreAdapters.Postgres do
 
       @impl Headwater.EventStore
       def read_events(from_event_ref: event_ref, limit: limit) do
-        Logger.log(:info, "fetching next #{limit} events from event_ref #{event_ref}.")
-
         import Ecto.Query, only: [from: 2]
 
         from(event in HeadwaterEventsSchema,

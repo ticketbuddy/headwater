@@ -1,6 +1,6 @@
 import Mix.Config
 
-config :logger, level: :warn
+config :logger, level: :info
 
 config :headwater,
   supervisor: Example.AggregateSupervisor,
@@ -10,4 +10,5 @@ config :example, Example.Repo,
   username: "postgres",
   password: "postgres",
   database: "headwater_example_dev",
-  hostname: "localhost"
+  hostname: "localhost",
+  log: false

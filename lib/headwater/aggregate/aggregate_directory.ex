@@ -99,8 +99,10 @@ defmodule Headwater.AggregateDirectory do
       end
 
       defp notify_listeners(result) do
+        require Logger
         case result do
           {:ok, %Headwater.AggregateDirectory.Result{}} ->
+            Logger.log(:info, "Notifying listeners #{inspect(result)}")
             Enum.each(@listeners, & &1.check_for_new_data())
 
           _ ->

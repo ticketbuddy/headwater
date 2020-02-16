@@ -24,6 +24,7 @@ defmodule Headwater.Listener.Provider do
            ) do
     quote do
       use GenStage
+      require Logger
       @from_event_ref unquote(from_event_ref)
       @event_store unquote(event_store)
       @bus_id unquote(bus_id)
@@ -43,16 +44,21 @@ defmodule Headwater.Listener.Provider do
 
       @impl true
       def handle_demand(demand, state) do
+        Logger.log(:info, "Provider handling demand for up to #{demand} new events, from event ref #{state}.")
         read_new_events(state, limit: demand)
       end
 
       @impl true
       def handle_info(:check_for_new_data, state) do
-        read_new_events(state, limit: 10)
+        limit = 10
+        Logger.log(:info, "Provider checking for up to #{limit} new events, from event ref #{state}.")
+        read_new_events(state, limit: limit)
       end
 
       @impl true
       def handle_info({:event_processed, event_ref}, _state) do
+        Logger.log(:info, "Listener #{@bus_id}, completed event ref: #{event_ref}")
+
         @event_store.bus_has_completed_event_ref(
           bus_id: @bus_id,
           event_ref: event_ref
@@ -64,7 +70,15 @@ defmodule Headwater.Listener.Provider do
       defp read_new_events(read_from, limit: limit) do
         events = @event_store.read_events(from_event_ref: read_from, limit: limit)
 
-        {:noreply, events, read_from}
+        case events do
+          [] ->
+            Logger.log(:info, "no new events, #{read_from} was the last")
+            {:noreply, events, read_from}
+          _not_empty ->
+            last_event = List.last(events)
+            Logger.log(:info, "read new events, up to #{last_event.event_ref}")
+            {:noreply, events, last_event.event_ref}
+        end
       end
     end
   end

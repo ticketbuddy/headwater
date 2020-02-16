@@ -23,9 +23,11 @@ defmodule Headwater.Listener.Consumer do
   defmacro __using__(provider: provider, retry_limit: retry_limit, handlers: handlers) do
     quote do
       use GenStage
+      require Logger
       @provider unquote(provider)
       @retry_limit unquote(retry_limit)
-      @handlers unquote(handlers)
+      @handlers unquote(handlers) |> Enum.with_index(1)
+      @handler_count unquote(handlers) |> Enum.count()
 
       def start_link(_) do
         GenStage.start_link(__MODULE__, :no_meaningful_state)
@@ -51,8 +53,10 @@ defmodule Headwater.Listener.Consumer do
 
         handle_result =
           @handlers
-          |> Enum.all?(fn handler ->
+          |> Enum.all?(fn {handler, handler_index} ->
             notes = event_notes(handler, event)
+
+            Logger.log(:info, "Calling listener handler #{handler}, #{handler_index}/#{@handler_count}")
 
             case handler.handle_event(event.event, notes) do
               :ok -> true
@@ -86,8 +90,6 @@ defmodule Headwater.Listener.Consumer do
       end
 
       defp event_handler_callback!(event, attempt) do
-        require Logger
-
         Logger.log(
           :error,
           "Listener, max retry limit reached, on attempt #{attempt}/#{@retry_limit}. Trying to handle the event: #{
