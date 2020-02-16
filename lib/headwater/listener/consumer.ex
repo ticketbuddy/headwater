@@ -1,33 +1,22 @@
 defmodule Headwater.Listener.Consumer do
-  @moduledoc """
-  A GenStage consumer for the consumption of events
-  from a single EventBus, that has fetched from the DB.
-
-  The EventBusConsumer is a one-to-one mapping with the EventBusProducer,
-  because this way, we can be sure to manage the events
-  in order per consumer, and with a clear starting point
-  via the `from_event_ref` value in the consumer's corresponding
-  EventBus.
-
-  For each event received, it runs the handle_event/1
-  callback. It will keep retrying the callback until
-  it returns `:ok`
-
-  Once the handle_event/1 callback returns `:ok`, then
-  a message is sent to the bus to inform it of the
-  successfully handled event.
-  """
   @callback handle_events() :: {:noreply, [], :no_meaningful_state}
   @callback handle_event(any()) :: :ok | :error
 
-  defmacro __using__(provider: provider, retry_limit: retry_limit, handlers: handlers) do
+  defmacro __using__(
+             provider: provider,
+             retry_limit: retry_limit,
+             event_store: event_store,
+             handlers: handlers
+           ) do
     quote do
       use GenStage
       require Logger
       @provider unquote(provider)
+      @event_store unquote(event_store)
       @retry_limit unquote(retry_limit)
-      @handlers unquote(handlers) |> Enum.with_index(1)
-      @handler_count unquote(handlers) |> Enum.count()
+      @handlers unquote(handlers)
+
+      alias Headwater.Listener.EventHandler
 
       def start_link(_) do
         GenStage.start_link(__MODULE__, :no_meaningful_state)
@@ -35,76 +24,29 @@ defmodule Headwater.Listener.Consumer do
 
       @impl true
       def init(state) do
-        {:consumer, state, subscribe_to: [@provider]}
+        {:consumer, state, subscribe_to: [{@provider, max_demand: 1}]}
       end
 
       @impl true
-      def handle_events(events, _from, state) do
-        for event <- events do
-          event_handler_callback!(event)
-          :ok
-        end
+      def handle_events([event_ref], _from, state) do
+        event_ref
+        |> EventHandler.fetch_event(@event_store)
+        |> EventHandler.build_handlers(@handlers)
+        |> EventHandler.callbacks()
+        |> EventHandler.mark_as_completed(@event_store, @provider.bus_id(), event_ref)
+        |> case do
+          :ok ->
+            {:noreply, [], state}
 
-        {:noreply, [], state}
-      end
-
-      defp event_handler_callback!(event, attempt \\ 0) when attempt < @retry_limit do
-        :timer.sleep(:rand.uniform(100) * (attempt * 3))
-
-        handle_result =
-          @handlers
-          |> Enum.all?(fn {handler, handler_index} ->
-            notes = event_notes(handler, event)
-
-            Logger.log(
-              :info,
-              "Calling listener handler #{handler}, #{handler_index}/#{@handler_count}"
-            )
-
-            case handler.handle_event(event.event, notes) do
-              :ok -> true
-              {:ok, _} -> true
-              _other_result -> false
-            end
-          end)
-
-        case handle_result do
-          true ->
-            notify_producer_of_completed_event(event.event_ref)
-            :ok
-
-          false ->
-            event_handler_callback!(event, attempt + 1)
+          {:error, :callback_errors} ->
+            # TODO handle this better...
+            raise "Callback had errors"
         end
       end
 
-      defp event_notes(handler, event) do
-        %{
-          event_ref: event.event_ref,
-          aggregate_id: event.aggregate_id,
-          effect_idempotent_key: build_causation_idempotency_key(handler, event),
-          event_occurred_at: event.inserted_at
-        }
-      end
-
-      defp build_causation_idempotency_key(handler, event) do
-        (handler.listener_prefix() <> Integer.to_string(event.event_ref) <> event.aggregate_id)
-        |> Headwater.Listener.web_safe_md5()
-      end
-
-      defp event_handler_callback!(event, attempt) do
-        Logger.log(
-          :error,
-          "Listener, max retry limit reached, on attempt #{attempt}/#{@retry_limit}. Trying to handle the event: #{
-            inspect(event)
-          }"
-        )
-
-        raise "Max retry limit reached"
-      end
-
-      defp notify_producer_of_completed_event(event_ref) do
-        send(@provider, {:event_processed, event_ref})
+      @impl true
+      def handle_events(_events, _from, _state) do
+        raise "Only one event at a time."
       end
     end
   end

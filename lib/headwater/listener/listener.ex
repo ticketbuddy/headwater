@@ -23,13 +23,12 @@ defmodule Headwater.Listener do
         use Headwater.Listener.Consumer,
           provider: Provider,
           retry_limit: 5,
+          event_store: unquote(event_store),
           handlers: unquote(handlers)
       end
 
-      def check_for_new_data(up_to_event_ref) do
-        send(Provider, {:check_for_new_data, up_to_event_ref})
-
-        :ok
+      def process_event_ref(event_ref) do
+        Provider.process_event(event_ref)
       end
 
       def children do
