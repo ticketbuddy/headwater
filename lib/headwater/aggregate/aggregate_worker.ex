@@ -120,7 +120,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
         last_event_id: latest_event_id
       }
 
-      {:reply, {:ok, {latest_event_id, new_aggregate_state}}, updated_state}
+      {:reply, {:ok, {latest_event_ref, latest_event_id, new_aggregate_state}}, updated_state}
     else
       {:error, :wish_already_completed} ->
         {:reply, {:ok, {last_event_id, aggregate_state}}, state}

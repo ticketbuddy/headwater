@@ -61,7 +61,7 @@ defmodule Headwater.Aggregate.AggregateTest do
          }}
       end)
 
-      assert {:reply, {:ok, {4, %FakeApp{total: 1}}},
+      assert {:reply, {:ok, {4, 4, %FakeApp{total: 1}}},
               %{
                 last_event_id: 4,
                 aggregate: %Headwater.Aggregate.AggregateWorker{
