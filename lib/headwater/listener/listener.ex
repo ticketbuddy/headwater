@@ -3,7 +3,7 @@ defmodule Headwater.Listener do
   Reading events from an event aggregate.
   """
   @type event_ref :: integer()
-  @callback check_for_new_data(event_ref) :: :ok
+  @callback process_event_ref(event_ref) :: :ok
 
   defmacro __using__(
              from_event_ref: from_event_ref,
