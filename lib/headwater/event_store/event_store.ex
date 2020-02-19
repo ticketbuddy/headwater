@@ -4,6 +4,7 @@ defmodule Headwater.EventStore do
   """
 
   @type aggregate_id :: String.t()
+  @type event :: any()
   @type events :: List.t()
   @type last_event_id :: integer()
   @type latest_event_ref :: integer()
@@ -29,4 +30,5 @@ defmodule Headwater.EventStore do
   @callback bus_has_completed_event_ref(bus_id: String.t(), event_ref: String.t()) :: :ok
 
   @callback get_next_event_ref(bus_id, base_event_ref) :: integer()
+  @callback get_event(event_ref) :: {:ok, event}
 end

@@ -1,22 +1,4 @@
 defmodule Headwater.Listener.Provider do
-  @moduledoc """
-  Provider of events for a single EventBus. It fetches
-  the next series of events to be projected, for the EventBusConsumer
-  to use.
-
-  This Provider does not filter any event types. It is up to the logic
-  in the `handle_event/1` callback of the consumer to filter the events
-  that the projector wishes to handle.
-
-  Specify a `from_event_ref` value to dictate the first event that this
-  bus should load. This allows projectors to skip the first `x` of
-  of events, which is useful if the projector is for sending emails or
-  other notifications, which have no relevance for very historic events.
-
-  The bus is notified of when to check the database for more events
-  via an `info` message sent by the EventStore once a new event has been
-  committed.
-  """
   defmacro __using__(
              from_event_ref: from_event_ref,
              event_store: event_store,
@@ -31,8 +13,11 @@ defmodule Headwater.Listener.Provider do
 
       def start_link(_) do
         read_from = @event_store.get_next_event_ref(@bus_id, @from_event_ref)
+        init_state = {:queue.new(), 0, read_from}
 
-        GenStage.start_link(__MODULE__, read_from, name: __MODULE__)
+        Logger.log(:info, "#{@bus_id} continuing from event ref: #{read_from}")
+
+        GenStage.start_link(__MODULE__, init_state, name: __MODULE__)
       end
 
       # Callbacks
@@ -42,67 +27,50 @@ defmodule Headwater.Listener.Provider do
         {:producer, state, dispatcher: GenStage.BroadcastDispatcher}
       end
 
-      @impl true
-      def handle_demand(demand, state) do
-        Logger.log(
-          :info,
-          "Provider handling demand for up to #{demand} new events, from event ref #{state}."
-        )
+      def bus_id, do: @bus_id
 
-        read_new_events(state, limit: demand)
+      def process_event(event_ref) do
+        send(__MODULE__, {:new_event_ref, event_ref})
+
+        :ok
       end
 
       @impl true
-      def handle_info({:check_for_new_data, up_to_event_ref}, state) do
-        # TODO: also get the event_ref, and compare to the
-        # event_ref held in the state.
-        limit = 10
+      def handle_info({:new_event_ref, event_ref}, state) do
+        {queue, pending_demand, latest_event_ref} = state
+        expected_next_event_ref = latest_event_ref + 1
 
-        case up_to_event_ref > state do
-          true ->
-            Logger.log(
-              :info,
-              "Provider checking for up to #{limit} new events, from event ref #{state}."
-            )
+        cond do
+          event_ref == expected_next_event_ref ->
+            flush_events({:queue.in(event_ref, queue), pending_demand, event_ref}, [])
 
-            read_new_events(state, limit: limit)
+          event_ref > expected_next_event_ref ->
+            Logger.log(:error, "Event from the future!")
+            raise "Received event from the future"
 
-          false ->
-            Logger.log(
-              :info,
-              "Provider not checking data. #{up_to_event_ref} is less than the currently processed #{
-                state
-              }."
-            )
-
-            {:noreply, [], state}
+          event_ref < expected_next_event_ref ->
+            Logger.log(:error, "Event already processed")
+            raise "Event already processed!"
         end
       end
 
-      @impl true
-      def handle_info({:event_processed, event_ref}, _state) do
-        Logger.log(:info, "Listener #{@bus_id}, completed event ref: #{event_ref}")
-
-        @event_store.bus_has_completed_event_ref(
-          bus_id: @bus_id,
-          event_ref: event_ref
-        )
-
-        {:noreply, [], event_ref}
+      def handle_demand(demand, {queue, pending_demand, latest_event_ref}) do
+        flush_events({queue, pending_demand + demand, latest_event_ref}, [])
       end
 
-      defp read_new_events(read_from, limit: limit) do
-        events = @event_store.read_events(from_event_ref: read_from, limit: limit)
+      defp flush_events(state = {_queue, pending_demand = 0, _latest_event_ref}, events_to_flush) do
+        {:noreply, Enum.reverse(events_to_flush), state}
+      end
 
-        case events do
-          [] ->
-            Logger.log(:info, "no new events, #{read_from} was the last")
-            {:noreply, events, read_from}
+      defp flush_events(state, events_to_flush) do
+        {queue, pending_demand, latest_event_ref} = state
 
-          _not_empty ->
-            last_event = List.last(events)
-            Logger.log(:info, "read new events, up to #{last_event.event_ref}")
-            {:noreply, events, last_event.event_ref}
+        case :queue.out(queue) do
+          {{:value, event}, queue} ->
+            flush_events({queue, pending_demand - 1, latest_event_ref}, [event | events_to_flush])
+
+          {:empty, queue} ->
+            {:noreply, Enum.reverse(events_to_flush), state}
         end
       end
     end

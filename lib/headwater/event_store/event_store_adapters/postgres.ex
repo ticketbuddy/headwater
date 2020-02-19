@@ -94,6 +94,16 @@ defmodule Headwater.EventStoreAdapters.Postgres do
         |> format_events()
       end
 
+      def get_event(event_ref) do
+        @repo.get_by(HeadwaterEventsSchema, event_ref: event_ref)
+        |> List.wrap()
+        |> format_events()
+        |> case do
+          {[event], last_event_id} -> {:ok, event}
+          _ -> {:error, :event_not_found}
+        end
+      end
+
       defp format_events(events) do
         serialised_events = serialise_events(events)
 

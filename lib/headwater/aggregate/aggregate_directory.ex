@@ -12,6 +12,7 @@ defmodule Headwater.AggregateDirectory do
     defstruct @enforce_keys
   end
 
+  # TODO: have read and write result.
   defmodule Result do
     @derive {Jason.Encoder, only: [:state]}
     defstruct [:aggregate_id, :event_id, :event_ref, :state]
@@ -115,7 +116,7 @@ defmodule Headwater.AggregateDirectory do
         case result do
           {:ok, %Headwater.AggregateDirectory.Result{event_ref: event_ref}} ->
             Logger.log(:info, "Notifying listeners #{inspect(result)}")
-            Enum.each(@listeners, & &1.check_for_new_data(event_ref))
+            Enum.each(@listeners, & &1.process_event_ref(event_ref))
 
           _ ->
             :ok
