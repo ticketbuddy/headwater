@@ -196,7 +196,7 @@ defmodule Headwater.Aggregate.AggregateTest do
       end)
 
       Headwater.ListenerMock
-      |> expect(:check_for_new_data, fn 5 ->
+      |> expect(:process_event_ref, fn 5 ->
         :ok
       end)
 

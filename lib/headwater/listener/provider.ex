@@ -40,22 +40,31 @@ defmodule Headwater.Listener.Provider do
         {queue, pending_demand, latest_event_ref} = state
         expected_next_event_ref = latest_event_ref + 1
 
-        cond do
-          event_ref == expected_next_event_ref ->
-            flush_events({:queue.in(event_ref, queue), pending_demand, event_ref}, [])
+        Logger.log(
+          :info,
+          "#{@bus_id} received event ref, currently: #{latest_event_ref}, requested: #{event_ref}"
+        )
 
-          event_ref > expected_next_event_ref ->
-            Logger.log(:error, "Event from the future!")
-            raise "Received event from the future"
+        cond do
+          event_ref >= expected_next_event_ref ->
+            queue = add_missed_event_refs_to_queue(queue, expected_next_event_ref, event_ref)
+            flush_events({queue, pending_demand, event_ref}, [])
 
           event_ref < expected_next_event_ref ->
-            Logger.log(:error, "Event already processed")
-            raise "Event already processed!"
+            Logger.log(:warn, "Event already processed")
+            {:noreply, [], state}
         end
       end
 
       def handle_demand(demand, {queue, pending_demand, latest_event_ref}) do
         flush_events({queue, pending_demand + demand, latest_event_ref}, [])
+      end
+
+      defp add_missed_event_refs_to_queue(queue, expected_next_event_ref, requested_event_ref) do
+        expected_next_event_ref..requested_event_ref
+        |> Enum.reduce(queue, fn event_ref_to_add, queue ->
+          :queue.in(event_ref_to_add, queue)
+        end)
       end
 
       defp flush_events(state = {_queue, pending_demand = 0, _latest_event_ref}, events_to_flush) do
