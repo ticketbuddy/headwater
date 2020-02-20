@@ -23,33 +23,10 @@ defmodule Headwater.EventStore.Adapters.Postgres.Commit do
     end)
   end
 
-  def add_results(multi) do
-    multi
-    |> Multi.run(:results, fn _repo, changes ->
-      {:ok, get_latest_event_ref_and_id(changes)}
-    end)
-  end
-
-  def get_latest_event_ref_and_id(change_result) do
-    default_results = %{
-      latest_event_id: 0,
-      latest_event_ref: 0
-    }
-
-    Enum.reduce(change_result, default_results, fn
-      {_key, inserted_event = %HeadwaterEventsSchema{}}, curr_results ->
-        %{
-          latest_event_id: max(inserted_event.event_id, curr_results.latest_event_id),
-          latest_event_ref: max(inserted_event.event_ref, curr_results.latest_event_ref)
-        }
-
-      {_key, _value}, results ->
-        results
-    end)
-  end
-
-  def on_commit_result({:ok, %{results: results}}) do
-    {:ok, results}
+  def on_commit_result({:ok, change_data}) do
+    # TODO: return list of Headwater.EventStore.RecordedEvent.t()
+    # change_data
+    :ok
   end
 
   def on_commit_result(

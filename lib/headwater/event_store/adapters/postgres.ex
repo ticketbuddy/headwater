@@ -19,7 +19,6 @@ defmodule Headwater.EventStore.Adapters.Postgres do
         Multi.new()
         |> Commit.add_idempotency(idempotency_key)
         |> Commit.add_inserts(persist_events)
-        |> Commit.add_results()
         |> @repo.transaction()
         |> Commit.on_commit_result()
       end
