@@ -1,18 +1,15 @@
 defmodule Headwater.Aggregate.NextState do
-  def process(_aggregate, aggregate_state, []) do
-    {:ok, aggregate_state}
+  def process(_handler, aggregate_state, [], aggregate_number) do
+    {:ok, aggregate_state, aggregate_number}
   end
 
-  def process(aggregate, aggregate_state, [new_event | next_events]) do
-    require Logger
-    Logger.log(:info, "#{aggregate.handler}.next_state/2 for #{new_event.__struct__}")
-
-    case aggregate.handler.next_state(aggregate_state, new_event) do
+  def process(handler, aggregate_state, [new_event | next_events], aggregate_number \\ nil) do
+    case handler.next_state(aggregate_state, new_event.data) do
       response = {:error, reason} ->
         {:error, :next_state, response}
 
       new_aggregate_state ->
-        process(aggregate, new_aggregate_state, next_events)
+        process(handler, new_aggregate_state, next_events, new_event.aggregate_number)
     end
   end
 end

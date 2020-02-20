@@ -78,7 +78,7 @@ defmodule Headwater.AggregateDirectory do
       use Headwater.Aggregate.Expand, aggregate_directory: __MODULE__
 
       def handle(request = %WriteRequest{}) do
-        %Headwater.Aggregate.AggregateWorker{
+        %Headwater.Aggregate.AggregateConfig{
           id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
@@ -86,13 +86,13 @@ defmodule Headwater.AggregateDirectory do
           event_store: @event_store
         }
         |> ensure_started()
-        |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
+        |> Headwater.Aggregate.AggregateWorker.propose_wish(request)
         |> Headwater.AggregateDirectory.Result.new(request.aggregate_id)
         |> notify_listeners()
       end
 
       def read_state(request = %ReadRequest{}) do
-        %Headwater.Aggregate.AggregateWorker{
+        %Headwater.Aggregate.AggregateConfig{
           id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,

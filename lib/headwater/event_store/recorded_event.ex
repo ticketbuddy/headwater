@@ -24,7 +24,7 @@ defmodule Headwater.EventStore.RecordedEvent do
           event_number: non_neg_integer(),
           aggregate_id: String.t(),
           aggregate_number: non_neg_integer(),
-          data: binary(),
+          data: struct(),
           created_at: DateTime.t()
         }
 end

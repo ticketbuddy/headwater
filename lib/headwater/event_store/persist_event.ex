@@ -14,9 +14,9 @@ defmodule Headwater.EventStore.PersistEvent do
           data: String.t()
         }
 
-  def new(%{data: data, aggregate_number: aggregate_number, aggregate_id: aggregate_id}) do
+  def new(data, aggregate_config) do
     %__MODULE__{
-      aggregate_id: aggregate_id,
+      aggregate_id: aggregate_config.id,
       aggregate_number: aggregate_number,
       data: EventSerializer.serialize(data)
     }
