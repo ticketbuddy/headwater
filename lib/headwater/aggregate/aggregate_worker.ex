@@ -53,7 +53,8 @@ defmodule Headwater.Aggregate.AggregateWorker do
     # before processing them to obtain the next state.
     # There must be a more efficient way of doing this...
 
-    {:ok, events, last_event_id} = aggregate.event_store.load(aggregate.id)
+    {:ok, events} = aggregate.event_store.load_events(aggregate.id)
+    {:ok, last_event_id} = aggregate.event_store.last_event_id(events)
 
     business_domain_events = get_in(events, [Access.all(), Access.key(:event)])
 
@@ -104,7 +105,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
          {:ok, new_aggregate_state} <-
            NextState.process(aggregate, aggregate_state, new_events),
          {:ok, %{latest_event_id: latest_event_id, latest_event_ref: latest_event_ref}} <-
-           aggregate.event_store.commit!(aggregate_id, last_event_id, new_events, idempotency_key) do
+           aggregate.event_store.commit(aggregate_id, last_event_id, new_events, idempotency_key) do
       Logger.log(
         :debug,
         "aggregate #{aggregate_id} state updated. event ID increased from #{last_event_id} to #{

@@ -4,31 +4,17 @@ defmodule Headwater.EventStore do
   """
 
   @type aggregate_id :: String.t()
-  @type event :: any()
-  @type events :: List.t()
-  @type last_event_id :: integer()
-  @type latest_event_ref :: integer()
-  @type latest_event_id :: integer()
+  @type event :: Headwater.EventStore.Event.t()
+  @type events :: [event]
   @type event_ref :: integer()
   @type base_event_ref :: integer()
   @type idempotency_key :: String.t()
-  @type bus_id :: String.t()
+  @type listener_id :: String.t()
 
-  @callback commit!(aggregate_id, last_event_id, events, idempotency_key) ::
-              {:ok,
-               %{
-                 latest_event_id: latest_event_id,
-                 latest_event_ref: latest_event_ref
-               }}
-
-  @callback load(aggregate_id) :: {:ok, events, last_event_id}
-
-  @callback read_events(from_event_ref: event_ref, limit: integer()) :: events
-
+  @callback commit(events) :: {:ok, events}
+  @callback load_events(aggregate_id) :: {:ok, events}
   @callback has_wish_previously_succeeded?(idempotency_key) :: true | false
-
-  @callback bus_has_completed_event_ref(bus_id: String.t(), event_ref: String.t()) :: :ok
-
-  @callback get_next_event_ref(bus_id, base_event_ref) :: integer()
+  @callback event_handled(listener_id: listener_id, event_ref: event_ref) :: :ok
+  @callback next_listener_event_ref(listener_id, base_event_ref) :: event_ref
   @callback get_event(event_ref) :: {:ok, event}
 end

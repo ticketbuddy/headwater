@@ -15,7 +15,7 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       }
 
       @impl Headwater.EventStore
-      def commit!(aggregate_id, last_event_id, events, idempotency_key) do
+      def commit(aggregate_id, last_event_id, events, idempotency_key) do
         Multi.new()
         |> Commit.add_idempotency(idempotency_key)
         |> Commit.add_inserts({aggregate_id, last_event_id, events})
@@ -25,23 +25,20 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       end
 
       @impl Headwater.EventStore
-      def load(aggregate_id) do
+      def load_events(aggregate_id) do
         {events, last_event_id} = fetch_events(aggregate_id)
+        Logger.log(:info, "fetching all events for aggregate #{aggregate_id}.")
 
-        {:ok, events, last_event_id}
-      end
-
-      @impl Headwater.EventStore
-      def read_events(from_event_ref: event_ref, limit: limit) do
         import Ecto.Query, only: [from: 2]
 
         from(event in HeadwaterEventsSchema,
-          where: event.event_ref > ^event_ref,
-          order_by: [asc: event.event_ref],
-          limit: ^limit
+          where: event.aggregate_id == ^aggregate_id,
+          order_by: [asc: event.event_id]
         )
         |> @repo.all()
-        |> serialise_events()
+        |> format_events()
+
+        {:ok, events, last_event_id}
       end
 
       @impl Headwater.EventStore
@@ -79,19 +76,6 @@ defmodule Headwater.EventStoreAdapters.Postgres do
         }
         |> HeadwaterEventBusSchema.changeset()
         |> @repo.insert()
-      end
-
-      defp fetch_events(aggregate_id) do
-        Logger.log(:info, "fetching all events for aggregate #{aggregate_id}.")
-
-        import Ecto.Query, only: [from: 2]
-
-        from(event in HeadwaterEventsSchema,
-          where: event.aggregate_id == ^aggregate_id,
-          order_by: [asc: event.event_id]
-        )
-        |> @repo.all()
-        |> format_events()
       end
 
       def get_event(event_ref) do

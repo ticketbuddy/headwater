@@ -23,7 +23,7 @@ defmodule Example.EventStoreTest do
                 event_ref: 6,
                 aggregate_id: "event-ordering"
               }
-            ], 2} = Example.EventStore.load("event-ordering")
+            ], 2} = Example.EventStore.load_events("event-ordering")
   end
 
   describe "fetching the next event ref" do
