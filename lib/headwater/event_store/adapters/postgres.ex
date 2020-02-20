@@ -1,4 +1,4 @@
-defmodule Headwater.EventStoreAdapters.Postgres do
+defmodule Headwater.EventStore.Adapters.Postgres do
   defmacro __using__(repo: repo) do
     quote do
       @behaviour Headwater.EventStore
@@ -15,10 +15,10 @@ defmodule Headwater.EventStoreAdapters.Postgres do
       }
 
       @impl Headwater.EventStore
-      def commit(aggregate_id, last_event_id, events, idempotency_key) do
+      def commit(persist_events, idempotency_key: idempotency_key) do
         Multi.new()
         |> Commit.add_idempotency(idempotency_key)
-        |> Commit.add_inserts({aggregate_id, last_event_id, events})
+        |> Commit.add_inserts(persist_events)
         |> Commit.add_results()
         |> @repo.transaction()
         |> Commit.on_commit_result()

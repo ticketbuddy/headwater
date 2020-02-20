@@ -1,4 +1,4 @@
-defmodule Headwater.EventStoreAdapters.Postgres.HeadwaterIdempotencySchema do
+defmodule Headwater.EventStore.Adapters.Postgres.HeadwaterIdempotencySchema do
   use Ecto.Schema
   @primary_key {:id, :binary_id, autogenerate: true}
   @timestamps_opts [type: :utc_datetime]

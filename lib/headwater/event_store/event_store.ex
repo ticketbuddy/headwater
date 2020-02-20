@@ -3,18 +3,17 @@ defmodule Headwater.EventStore do
   Behaviour for storage & reading of events
   """
 
+  @type uuid :: String.t()
   @type aggregate_id :: String.t()
-  @type event :: Headwater.EventStore.Event.t()
-  @type events :: [event]
-  @type event_ref :: integer()
-  @type base_event_ref :: integer()
-  @type idempotency_key :: String.t()
+  @type event_id :: uuid
+  @type recorded_event :: Headwater.EventStore.RecordedEvent.t()
+  @type persist_event :: Headwater.EventStore.PersistEvent.t()
   @type listener_id :: String.t()
+  @type idempotency_key :: String.t()
+  @type event_number :: non_neg_integer()
 
-  @callback commit(events) :: {:ok, events}
-  @callback load_events(aggregate_id) :: {:ok, events}
-  @callback has_wish_previously_succeeded?(idempotency_key) :: true | false
-  @callback event_handled(listener_id: listener_id, event_ref: event_ref) :: :ok
-  @callback next_listener_event_ref(listener_id, base_event_ref) :: event_ref
-  @callback get_event(event_ref) :: {:ok, event}
+  @callback commit([persist_event], idempotency_key: idempotency_key) :: {:ok, [recorded_event]}
+  @callback load_events(aggregate_id) :: {:ok, [recorded_event]}
+  @callback event_handled(listener_id: listener_id, event_number: event_number) :: :ok
+  @callback get_event(event_id) :: {:ok, recorded_event}
 end

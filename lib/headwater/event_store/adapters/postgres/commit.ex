@@ -1,7 +1,7 @@
-defmodule Headwater.EventStoreAdapters.Postgres.Commit do
+defmodule Headwater.EventStore.Adapters.Postgres.Commit do
   require Logger
   alias Ecto.Multi
-  alias Headwater.EventStoreAdapters.Postgres.{HeadwaterEventsSchema, HeadwaterIdempotencySchema}
+  alias Headwater.EventStore.Adapters.Postgres.{HeadwaterEventsSchema, HeadwaterIdempotencySchema}
 
   def add_idempotency(multi, idempotency_key) do
     multi
@@ -11,25 +11,14 @@ defmodule Headwater.EventStoreAdapters.Postgres.Commit do
     )
   end
 
-  def add_inserts(multi, {aggregate_id, latest_event_id, events}) do
-    events
-    |> Enum.with_index(1)
-    |> Enum.reduce(multi, fn {event, index}, multi ->
-      serialised_event = Headwater.EventStore.EventSerializer.serialize(event)
-
+  def add_inserts(multi, persist_events) do
+    persist_events
+    |> Enum.reduce(multi, fn persist_event, multi ->
       multi
       |> Multi.insert(
-        :"event_#{index}",
-        fn %{idempotency_check: idempotency_check} ->
-          %{
-            event_id: latest_event_id + index,
-            aggregate_id: aggregate_id,
-            event: serialised_event,
-            idempotency_id: idempotency_check.id
-          }
-          |> HeadwaterEventsSchema.changeset()
-        end,
-        returning: [:event_ref]
+        :"event_#{persist_event.aggregate_number}",
+        HeadwaterEventsSchema.changeset(persist_event),
+        returning: [:event_id, :event_number]
       )
     end)
   end

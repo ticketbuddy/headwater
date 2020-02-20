@@ -2,7 +2,7 @@ defmodule Headwater.Aggregate.AggregateTest do
   use ExUnit.Case
   alias Headwater.Aggregate.AggregateWorker
   alias Headwater.AggregateDirectory.WriteRequest
-  alias Headwater.EventStoreAdapters.Postgres.HeadwaterEventsSchema
+  alias Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema
 
   import Mox
   setup :set_mox_global
