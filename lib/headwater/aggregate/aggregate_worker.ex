@@ -87,21 +87,22 @@ defmodule Headwater.Aggregate.AggregateWorker do
       ) do
     aggregate_config = state
 
-    with {:ok, persist_events} <- ExecuteWish.process(aggregate_config, wish),
+    with {:ok, aggregate_config, persist_events} <-
+           ExecuteWish.process(aggregate_config, write_request.wish),
          {:ok, recorded_events} <-
-           aggregate.event_store.commit(persist_events,
+           aggregate_config.event_store.commit(persist_events,
              idempotency_key: write_request.idempotency_key
            ),
-         {:ok, new_aggregate_state, aggregate_number} <-
-           NextState.process(aggregate, aggregate_state, recorded_events) do
-      {:reply, {:ok, {latest_event_ref, latest_event_id, new_aggregate_state}}, aggregate_config}
+         {:ok, aggregate_config} <-
+           NextState.process(aggregate_config, recorded_events) do
+      {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}
     else
       {:error, :wish_already_completed} ->
-        {:reply, {:ok, {aggregate_number, aggregate_state}}, state}
+        {:reply, {:ok, aggregate_config.aggregate_state}, state}
 
       error = {:error, :execute, _} ->
-        case has_wish_previously_succeeded?(aggregate, idempotency_key) do
-          true -> {:reply, {:ok, {aggregate_number, aggregate_state}}, state}
+        case has_wish_previously_succeeded?(aggregate_config, write_request.idempotency_key) do
+          true -> {:reply, {:ok, aggregate_config.aggregate_state}, state}
           false -> {:reply, error, state}
         end
 
@@ -110,7 +111,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
     end
   end
 
-  defp has_wish_previously_succeeded?(aggregate, idempotency_key) do
-    aggregate.event_store.has_wish_previously_succeeded?(idempotency_key)
+  defp has_wish_previously_succeeded?(aggregate_config, idempotency_key) do
+    aggregate_config.event_store.has_wish_previously_succeeded?(idempotency_key)
   end
 end

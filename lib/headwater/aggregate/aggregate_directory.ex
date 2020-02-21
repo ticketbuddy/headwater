@@ -83,7 +83,8 @@ defmodule Headwater.AggregateDirectory do
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
-          event_store: @event_store
+          event_store: @event_store,
+          aggregate_state: nil
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.propose_wish(request)
@@ -97,7 +98,8 @@ defmodule Headwater.AggregateDirectory do
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
-          event_store: @event_store
+          event_store: @event_store,
+          aggregate_state: nil
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.current_state()
