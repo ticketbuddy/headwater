@@ -1,6 +1,6 @@
 defmodule Headwater.Aggregate.NextStateTest do
   use ExUnit.Case
-  alias Headwater.Aggregate.NextState
+  alias Headwater.Aggregate.{NextState, AggregateConfig}
 
   defmodule FakeHandler do
     def next_state(state, event) do
@@ -10,7 +10,15 @@ defmodule Headwater.Aggregate.NextStateTest do
 
   describe "NextState.process/3" do
     test "builds a state" do
-      aggregate_state = 0
+      aggregate_config = %AggregateConfig{
+        id: "abc-123",
+        handler: FakeHandler,
+        registry: nil,
+        supervisor: nil,
+        event_store: nil,
+        aggregate_state: 0,
+        aggregate_number: 1
+      }
 
       recorded_events = [
         %Headwater.EventStore.RecordedEvent{
@@ -39,12 +47,18 @@ defmodule Headwater.Aggregate.NextStateTest do
         }
       ]
 
-      resulting_state = NextState.process(FakeHandler, aggregate_state, recorded_events)
+      resulting_state = NextState.process(aggregate_config, recorded_events)
 
-      expected_state = 11
-      expected_aggregate_number = 5
-
-      assert {:ok, expected_state, expected_aggregate_number} == resulting_state
+      assert {:ok,
+              %Headwater.Aggregate.AggregateConfig{
+                aggregate_number: 1,
+                aggregate_state: 11,
+                event_store: nil,
+                handler: Headwater.Aggregate.NextStateTest.FakeHandler,
+                id: "abc-123",
+                registry: nil,
+                supervisor: nil
+              }} == resulting_state
     end
   end
 end
