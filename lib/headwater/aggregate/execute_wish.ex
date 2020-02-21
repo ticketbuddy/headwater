@@ -18,12 +18,13 @@ defmodule Headwater.Aggregate.ExecuteWish do
     start_values = {aggregate_config, []}
 
     result =
-      Enum.reduce(List.wrap(events), start_values, fn event, acc ->
+      List.wrap(events)
+      |> Enum.reduce(start_values, fn event, acc ->
         {aggregate_config, persisted_events} = acc
         aggregate_config = AggregateConfig.inc_aggregate_number(aggregate_config)
         persisted_event = PersistEvent.new(event, aggregate_config)
 
-        {aggregate_config, [persisted_event | persisted_events]}
+        {aggregate_config, persisted_events ++ [persisted_event]}
       end)
 
     {:ok, result}
