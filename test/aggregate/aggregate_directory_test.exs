@@ -14,12 +14,13 @@ defmodule Headwater.Aggregate.AggregateTest do
     :ok
   end
 
-  @aggregate %Headwater.Aggregate.AggregateWorker{
+  @aggregate %Headwater.Aggregate.AggregateConfig{
     id: "aggregate-one",
     handler: Headwater.Aggregate.HandlerMock,
     registry: :fake_registry,
     supervisor: :fake_supervisor,
-    event_store: Headwater.EventStoreMock
+    event_store: Headwater.EventStoreMock,
+    aggregate_state: nil
   }
 
   test "init/1" do
