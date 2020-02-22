@@ -5,13 +5,13 @@ defmodule Headwater.TestSupport.AggregateDirectory do
   def handle(write_request = %WriteRequest{}) do
     send(self(), {:_headwater_handle, write_request})
 
-    Process.delete(:_headwater_handle_result) || {:ok, %Result{}}
+    Process.delete(:_headwater_handle_result) || {:ok, "aggregate state stubbed"}
   end
 
   def read_state(read_request = %ReadRequest{}) do
     send(self(), {:_headwater_read_state, read_request})
 
-    Process.delete(:_headwater_read_state_result) || {:ok, %Result{}}
+    Process.delete(:_headwater_read_state_result) || {:ok, "aggregate state stubbed"}
   end
 
   def set_handle_result(result), do: Process.put(:_headwater_handle_result, result)

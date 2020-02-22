@@ -1,4 +1,6 @@
 defmodule Headwater.AggregateDirectory do
+  alias Headwater.Aggregate.AggregateConfig
+
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
@@ -17,7 +19,7 @@ defmodule Headwater.AggregateDirectory do
       {:warn, :empty_aggregate}
     end
 
-    def new({:ok, %AggregateConfig{aggregate_state: aggregate_state}) do
+    def new({:ok, %AggregateConfig{aggregate_state: aggregate_state}}) do
       {:ok, aggregate_state}
     end
 
@@ -76,7 +78,7 @@ defmodule Headwater.AggregateDirectory do
       defp ensure_started(aggregate_config) do
         Headwater.Aggregate.AggregateWorker.new(aggregate_config)
 
-        aggregate
+        aggregate_config
       end
     end
   end
