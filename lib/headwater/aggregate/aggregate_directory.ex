@@ -1,4 +1,6 @@
 defmodule Headwater.AggregateDirectory do
+  alias Headwater.Aggregate.AggregateConfig
+
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
   @callback read_state(ReadRequest.t()) :: {:ok, Result.t()}
 
@@ -12,53 +14,21 @@ defmodule Headwater.AggregateDirectory do
     defstruct @enforce_keys
   end
 
-  # TODO: have read and write result.
   defmodule Result do
-    @derive {Jason.Encoder, only: [:state]}
-    defstruct [:aggregate_id, :event_id, :event_ref, :state]
-
-    def new({:ok, {latest_event_id = 0, state = nil}}, aggregate_id) do
-      result = %Result{
-        event_id: latest_event_id,
-        state: state,
-        aggregate_id: aggregate_id
-      }
-
-      {:warn, {:empty_aggregate, result}}
+    def new({:ok, %AggregateConfig{aggregate_number: 0, aggregate_state: nil}}) do
+      {:warn, :empty_aggregate}
     end
 
-    def new({:ok, {event_ref, latest_event_id, state}}, aggregate_id) do
-      {:ok,
-       %Result{
-         event_id: latest_event_id,
-         state: state,
-         aggregate_id: aggregate_id,
-         event_ref: event_ref
-       }}
+    def new({:ok, %AggregateConfig{aggregate_state: aggregate_state}}) do
+      {:ok, aggregate_state}
     end
 
-    def new({:ok, {latest_event_id, state}}, aggregate_id) do
-      {:ok,
-       %Result{
-         event_id: latest_event_id,
-         state: state,
-         aggregate_id: aggregate_id,
-         event_ref: :not_calculated
-       }}
-    end
-
-    def new({:error, :execute, response}, _aggregate_id) do
+    def new({:error, :execute, response}) do
       response
     end
 
-    def new({:error, :next_state, response}, _aggregate_id) do
+    def new({:error, :next_state, response}) do
       response
-    end
-
-    defimpl Jason.Encoder, for: [Headwater.AggregateDirectory.Result] do
-      def encode(struct, opts) do
-        Jason.Encode.map(Map.from_struct(struct.state), opts)
-      end
     end
   end
 
@@ -78,51 +48,37 @@ defmodule Headwater.AggregateDirectory do
       use Headwater.Aggregate.Expand, aggregate_directory: __MODULE__
 
       def handle(request = %WriteRequest{}) do
-        %Headwater.Aggregate.AggregateWorker{
+        %Headwater.Aggregate.AggregateConfig{
           id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
-          event_store: @event_store
+          event_store: @event_store,
+          aggregate_state: nil
         }
         |> ensure_started()
-        |> Headwater.Aggregate.AggregateWorker.propose_wish(request.wish, request.idempotency_key)
-        |> Headwater.AggregateDirectory.Result.new(request.aggregate_id)
-        |> notify_listeners()
+        |> Headwater.Aggregate.AggregateWorker.propose_wish(request)
+        |> Headwater.AggregateDirectory.Result.new()
       end
 
       def read_state(request = %ReadRequest{}) do
-        %Headwater.Aggregate.AggregateWorker{
+        %Headwater.Aggregate.AggregateConfig{
           id: request.aggregate_id,
           handler: request.handler,
           registry: @registry,
           supervisor: @supervisor,
-          event_store: @event_store
+          event_store: @event_store,
+          aggregate_state: nil
         }
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.current_state()
-        |> Headwater.AggregateDirectory.Result.new(request.aggregate_id)
+        |> Headwater.AggregateDirectory.Result.new()
       end
 
-      defp ensure_started(aggregate) do
-        Headwater.Aggregate.AggregateWorker.new(aggregate)
+      defp ensure_started(aggregate_config) do
+        Headwater.Aggregate.AggregateWorker.new(aggregate_config)
 
-        aggregate
-      end
-
-      defp notify_listeners(result) do
-        require Logger
-
-        case result do
-          {:ok, %Headwater.AggregateDirectory.Result{event_ref: event_ref}} ->
-            Logger.log(:info, "Notifying listeners #{inspect(result)}")
-            Enum.each(@listeners, & &1.process_event_ref(event_ref))
-
-          _ ->
-            :ok
-        end
-
-        result
+        aggregate_config
       end
     end
   end

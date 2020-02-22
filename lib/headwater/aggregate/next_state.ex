@@ -1,18 +1,23 @@
 defmodule Headwater.Aggregate.NextState do
-  def process(_aggregate, aggregate_state, []) do
-    {:ok, aggregate_state}
+  alias Headwater.Aggregate.AggregateConfig
+
+  def process(aggregate_config, []) do
+    {:ok, aggregate_config}
   end
 
-  def process(aggregate, aggregate_state, [new_event | next_events]) do
-    require Logger
-    Logger.log(:info, "#{aggregate.handler}.next_state/2 for #{new_event.__struct__}")
-
-    case aggregate.handler.next_state(aggregate_state, new_event) do
-      response = {:error, reason} ->
+  def process(
+        aggregate_config = %AggregateConfig{handler: handler, aggregate_state: aggregate_state},
+        [recorded_event | recorded_events]
+      ) do
+    case handler.next_state(aggregate_state, recorded_event.data) do
+      response = {:error, _reason} ->
         {:error, :next_state, response}
 
       new_aggregate_state ->
-        process(aggregate, new_aggregate_state, next_events)
+        aggregate_config
+        |> AggregateConfig.set_aggregate_state(new_aggregate_state)
+        |> AggregateConfig.update_aggregate_number(recorded_event)
+        |> process(recorded_events)
     end
   end
 end

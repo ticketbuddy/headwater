@@ -20,20 +20,10 @@ defmodule Headwater.Aggregate.RouterTest do
                             aggregate_id: "game-one",
                             wish: %FakeApp.ScorePoint{game_id: "game-one", value: 1}
                           } ->
-      {:ok,
-       %Headwater.AggregateDirectory.Result{
-         event_id: 1,
-         state: %FakeApp{},
-         aggregate_id: "game-one"
-       }}
+      {:ok, %FakeApp{}}
     end)
 
-    assert {:ok,
-            %Headwater.AggregateDirectory.Result{
-              event_id: 1,
-              state: %FakeApp{},
-              aggregate_id: "game-one"
-            }} == FakeRouter.score(%FakeApp.ScorePoint{})
+    assert {:ok, %FakeApp{}} == FakeRouter.score(%FakeApp.ScorePoint{})
   end
 
   test "uses the provided idempotency_key" do
@@ -41,20 +31,11 @@ defmodule Headwater.Aggregate.RouterTest do
     |> expect(:handle, fn %Headwater.AggregateDirectory.WriteRequest{
                             idempotency_key: "idem-po-54321"
                           } ->
-      {:ok,
-       %Headwater.AggregateDirectory.Result{
-         event_id: 1,
-         state: %FakeApp{},
-         aggregate_id: "game-one"
-       }}
+      {:ok, %FakeApp{}}
     end)
 
-    assert {:ok,
-            %Headwater.AggregateDirectory.Result{
-              event_id: 1,
-              state: %FakeApp{},
-              aggregate_id: "game-one"
-            }} == FakeRouter.score(%FakeApp.ScorePoint{}, idempotency_key: "idem-po-54321")
+    assert {:ok, %FakeApp{}} ==
+             FakeRouter.score(%FakeApp.ScorePoint{}, idempotency_key: "idem-po-54321")
   end
 
   test "retrieves the current state" do
@@ -63,19 +44,9 @@ defmodule Headwater.Aggregate.RouterTest do
                                 handler: FakeApp,
                                 aggregate_id: "game-one"
                               } ->
-      {:ok,
-       %Headwater.AggregateDirectory.Result{
-         event_id: 1,
-         state: %FakeApp{},
-         aggregate_id: "game-one"
-       }}
+      {:ok, %FakeApp{}}
     end)
 
-    assert {:ok,
-            %Headwater.AggregateDirectory.Result{
-              event_id: 1,
-              state: %FakeApp{},
-              aggregate_id: "game-one"
-            }} == FakeRouter.read_points("game-one")
+    assert {:ok, %FakeApp{}} == FakeRouter.read_points("game-one")
   end
 end

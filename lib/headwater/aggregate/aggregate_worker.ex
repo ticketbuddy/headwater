@@ -1,15 +1,15 @@
 defmodule Headwater.Aggregate.AggregateWorker do
-  @enforce_keys [:id, :handler, :registry, :supervisor, :event_store]
-  defstruct @enforce_keys
-
   use GenServer
+
+  alias Headwater.Aggregate.AggregateConfig
   alias Headwater.Aggregate.{NextState, ExecuteWish}
+  alias Headwater.AggregateDirectory.WriteRequest
   require Logger
 
   @moduledoc """
   Start a new aggregate
   """
-  def new(aggregate = %__MODULE__{}) do
+  def new(aggregate = %AggregateConfig{}) do
     opts = [
       aggregate: aggregate,
       name: via_tuple(aggregate)
@@ -18,12 +18,16 @@ defmodule Headwater.Aggregate.AggregateWorker do
     DynamicSupervisor.start_child(aggregate.supervisor, {__MODULE__, opts})
   end
 
-  def propose_wish(aggregate, wish, idempotency_key) do
-    GenServer.call(via_tuple(aggregate), {:wish, aggregate.id, wish, idempotency_key})
+  def propose_wish(aggregate, write_request = %WriteRequest{}) do
+    GenServer.call(via_tuple(aggregate), {:wish, write_request})
   end
 
   def current_state(aggregate) do
     GenServer.call(via_tuple(aggregate), :state)
+  end
+
+  def latest_aggregate_number(aggregate) do
+    GenServer.call(via_tuple(aggregate), :aggregate_number)
   end
 
   defp via_tuple(aggregate) do
@@ -36,7 +40,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
     {name, opts} = Keyword.pop(opts, :name)
     {aggregate, opts} = Keyword.pop(opts, :aggregate)
 
-    case GenServer.start_link(__MODULE__, %{aggregate: aggregate}, name: name) do
+    case GenServer.start_link(__MODULE__, aggregate, name: name) do
       {:ok, pid} ->
         GenServer.call(name, {:load_state_from_events, aggregate.id})
         {:ok, pid}
@@ -48,86 +52,62 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
   # Server callbacks
 
-  def handle_call({:load_state_from_events, aggregate_id}, _from, state = %{aggregate: aggregate}) do
+  def handle_call({:load_state_from_events, aggregate_id}, _from, state) do
+    aggregate = state
     # TODO: EventStore.load/1 loads all the events into memory
     # before processing them to obtain the next state.
     # There must be a more efficient way of doing this...
 
-    {:ok, events, last_event_id} = aggregate.event_store.load(aggregate.id)
+    {:ok, recorded_events} = aggregate.event_store.load_events(aggregate.id)
 
-    business_domain_events = get_in(events, [Access.all(), Access.key(:event)])
+    {:ok, aggregate_config} = NextState.process(aggregate, recorded_events)
 
-    {:ok, aggregate_state} = NextState.process(aggregate, nil, business_domain_events)
-
-    state = %{
-      aggregate: aggregate,
-      aggregate_state: aggregate_state,
-      last_event_id: last_event_id
-    }
-
-    {:reply, :ok, state}
+    {:reply, :ok, aggregate_config}
   end
 
   @impl true
   def handle_call(
         :state,
         _from,
-        state = %{last_event_id: last_event_id, aggregate_state: aggregate_state}
+        state
       ) do
-    Logger.log(
-      :debug,
-      "returning aggregate state. last_event_id: #{last_event_id}. state: #{
-        inspect(aggregate_state)
-      }"
-    )
+    %AggregateConfig{aggregate_state: aggregate_state} = state
+    {:reply, {:ok, aggregate_state}, state}
+  end
 
-    {:reply, {:ok, {last_event_id, aggregate_state}}, state}
+  @impl true
+  def handle_call(
+        :aggregate_number,
+        _from,
+        state
+      ) do
+    %AggregateConfig{aggregate_number: aggregate_number} = state
+    {:reply, {:ok, aggregate_number}, state}
   end
 
   def handle_call(
-        {:wish, aggregate_id, wish, idempotency_key},
+        {:wish, write_request = %WriteRequest{}},
         _from,
-        state = %{
-          aggregate: aggregate,
-          aggregate_state: aggregate_state,
-          last_event_id: last_event_id
-        }
+        state
       ) do
-    Logger.log(
-      :debug,
-      "aggregate #{aggregate_id}, received wish #{inspect(wish)} with idempotency_key #{
-        idempotency_key
-      }."
-    )
+    aggregate_config = state
 
-    with {:ok, new_events} <- ExecuteWish.process(aggregate, aggregate_state, wish),
-         {:ok, new_aggregate_state} <-
-           NextState.process(aggregate, aggregate_state, new_events),
-         {:ok, %{latest_event_id: latest_event_id, latest_event_ref: latest_event_ref}} <-
-           aggregate.event_store.commit!(aggregate_id, last_event_id, new_events, idempotency_key) do
-      Logger.log(
-        :debug,
-        "aggregate #{aggregate_id} state updated. event ID increased from #{last_event_id} to #{
-          latest_event_id
-        }, with #{inspect(Enum.count(new_events))} events #{inspect(new_events)} with idempotency_key #{
-          idempotency_key
-        }."
-      )
-
-      updated_state = %{
-        aggregate: aggregate,
-        aggregate_state: new_aggregate_state,
-        last_event_id: latest_event_id
-      }
-
-      {:reply, {:ok, {latest_event_ref, latest_event_id, new_aggregate_state}}, updated_state}
+    with {:ok, {aggregate_config, persist_events}} <-
+           ExecuteWish.process(aggregate_config, write_request.wish),
+         {:ok, recorded_events} <-
+           aggregate_config.event_store.commit(persist_events,
+             idempotency_key: write_request.idempotency_key
+           ),
+         {:ok, aggregate_config} <-
+           NextState.process(aggregate_config, recorded_events) do
+      {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}
     else
       {:error, :wish_already_completed} ->
-        {:reply, {:ok, {last_event_id, aggregate_state}}, state}
+        {:reply, {:ok, aggregate_config.aggregate_state}, state}
 
       error = {:error, :execute, _} ->
-        case has_wish_previously_succeeded?(aggregate, idempotency_key) do
-          true -> {:reply, {:ok, {last_event_id, aggregate_state}}, state}
+        case has_wish_previously_succeeded?(aggregate_config, write_request.idempotency_key) do
+          true -> {:reply, {:ok, aggregate_config.aggregate_state}, state}
           false -> {:reply, error, state}
         end
 
@@ -136,7 +116,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
     end
   end
 
-  defp has_wish_previously_succeeded?(aggregate, idempotency_key) do
-    aggregate.event_store.has_wish_previously_succeeded?(idempotency_key)
+  defp has_wish_previously_succeeded?(aggregate_config, idempotency_key) do
+    aggregate_config.event_store.has_wish_previously_succeeded?(idempotency_key)
   end
 end

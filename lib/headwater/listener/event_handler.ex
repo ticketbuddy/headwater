@@ -2,7 +2,7 @@ defmodule Headwater.Listener.EventHandler do
   @type notes :: %{idempotency_key: String.t()}
 
   @callback listener_prefix() :: String.t()
-  @callback handle_event(Headwater.Listener.Event.t(), notes) :: {:ok, any()} | :ok
+  @callback handle_event(any(), notes) :: {:ok, any()} | :ok
 
   def fetch_event(event_ref, event_store) do
     {:ok, event} = event_store.get_event(event_ref)

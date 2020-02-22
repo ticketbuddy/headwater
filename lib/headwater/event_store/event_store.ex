@@ -3,32 +3,18 @@ defmodule Headwater.EventStore do
   Behaviour for storage & reading of events
   """
 
+  @type uuid :: String.t()
   @type aggregate_id :: String.t()
-  @type event :: any()
-  @type events :: List.t()
-  @type last_event_id :: integer()
-  @type latest_event_ref :: integer()
-  @type latest_event_id :: integer()
-  @type event_ref :: integer()
-  @type base_event_ref :: integer()
+  @type event_id :: uuid
+  @type recorded_event :: Headwater.EventStore.RecordedEvent.t()
+  @type persist_event :: Headwater.EventStore.PersistEvent.t()
+  @type listener_id :: String.t()
   @type idempotency_key :: String.t()
-  @type bus_id :: String.t()
+  @type event_number :: non_neg_integer()
 
-  @callback commit!(aggregate_id, last_event_id, events, idempotency_key) ::
-              {:ok,
-               %{
-                 latest_event_id: latest_event_id,
-                 latest_event_ref: latest_event_ref
-               }}
-
-  @callback load(aggregate_id) :: {:ok, events, last_event_id}
-
-  @callback read_events(from_event_ref: event_ref, limit: integer()) :: events
-
+  @callback commit([persist_event], idempotency_key: idempotency_key) :: {:ok, [recorded_event]}
+  @callback load_events(aggregate_id) :: {:ok, [recorded_event]}
+  @callback event_handled(listener_id: listener_id, event_number: event_number) :: :ok
+  @callback get_event(event_id) :: {:ok, recorded_event}
   @callback has_wish_previously_succeeded?(idempotency_key) :: true | false
-
-  @callback bus_has_completed_event_ref(bus_id: String.t(), event_ref: String.t()) :: :ok
-
-  @callback get_next_event_ref(bus_id, base_event_ref) :: integer()
-  @callback get_event(event_ref) :: {:ok, event}
 end
