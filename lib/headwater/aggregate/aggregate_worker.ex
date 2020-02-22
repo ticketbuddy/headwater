@@ -92,7 +92,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
       ) do
     aggregate_config = state
 
-    with {:ok, aggregate_config, persist_events} <-
+    with {:ok, {aggregate_config, persist_events}} <-
            ExecuteWish.process(aggregate_config, write_request.wish),
          {:ok, recorded_events} <-
            aggregate_config.event_store.commit(persist_events,
