@@ -54,11 +54,9 @@ defmodule Headwater.Aggregate.AggregateWorker do
     # before processing them to obtain the next state.
     # There must be a more efficient way of doing this...
 
-    {:ok, events} = aggregate.event_store.load_events(aggregate.id)
+    {:ok, recorded_events} = aggregate.event_store.load_events(aggregate.id)
 
-    business_domain_events = get_in(events, [Access.all(), Access.key(:event)])
-
-    {:ok, aggregate_config} = NextState.process(aggregate, business_domain_events)
+    {:ok, aggregate_config} = NextState.process(aggregate, recorded_events)
 
     {:reply, :ok, aggregate_config}
   end
