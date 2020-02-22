@@ -9,8 +9,6 @@ defmodule Headwater.TestSupport.AggregateDirectoryTest do
       assert_state_requested: 1
     ]
 
-  alias Headwater.AggregateDirectory.Result
-
   test "can assert that a wish has been submitted" do
     FakeApp.Router.score(%FakeApp.ScorePoint{})
 

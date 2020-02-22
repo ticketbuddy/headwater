@@ -78,4 +78,26 @@ defmodule Headwater.EventStore.Adapters.Postgres.CommitTest do
              ] = Multi.to_list(multi_result)
     end
   end
+
+  describe "Commit.on_commit_result/1" do
+    test "when idempotency check fails" do
+      changes = %{}
+      error_changeset = %Ecto.Changeset{errors: [wish_already_completed: %{some: "reason"}]}
+
+      assert {:error, :wish_already_completed} ==
+               Commit.on_commit_result({:error, :idempotency_check, error_changeset, changes})
+    end
+
+    test "when commit fails with different changeset errors" do
+      changes = %{}
+      error_changeset = %Ecto.Changeset{errors: [something_else: %{some: "reason"}]}
+
+      assert {:error, :commit_error} ==
+               Commit.on_commit_result({:error, :idempotency_check, error_changeset, changes})
+    end
+
+    test "when commit fails not with changeset error" do
+      assert {:error, :commit_error} == Commit.on_commit_result({:error, :too_much_lemonade})
+    end
+  end
 end

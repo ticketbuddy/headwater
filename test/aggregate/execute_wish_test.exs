@@ -18,7 +18,7 @@ defmodule Headwater.Aggregate.ExecuteWishTest do
   end
 
   defmodule HandlerWithError do
-    def execute(state, wish) do
+    def execute(_state, _wish) do
       {:error, :not_enough_lemonade}
     end
   end
