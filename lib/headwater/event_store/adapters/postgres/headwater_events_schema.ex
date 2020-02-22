@@ -10,7 +10,6 @@ defmodule Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema do
     field(:event_number, :integer)
     field(:aggregate_number, :integer)
     field(:idempotency_key, :string)
-
     field(:data, :string)
 
     timestamps()

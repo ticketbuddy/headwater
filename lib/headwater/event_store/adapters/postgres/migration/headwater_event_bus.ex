@@ -1,4 +1,4 @@
-defmodule Headwater.Repo.Migrations.HeadwaterEventBus do
+defmodule Headwater.EventStore.Adapters.Postgres.Migration.HeadwaterEventBus do
   use Ecto.Migration
 
   def change do

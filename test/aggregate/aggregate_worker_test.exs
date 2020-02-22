@@ -15,7 +15,12 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
 
   setup do
     {:ok, supervisor_pid} = DynamicSupervisor.start_link(MySupervisor, {:ok, %{}})
-    {:ok, _} = Registry.start_link(keys: :unique, name: AggregateWorkerTesting.Registry)
+
+    case Registry.start_link(keys: :unique, name: AggregateWorkerTesting.Registry) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+      _error -> raise "registry not started."
+    end
 
     %{supervisor: supervisor_pid, registry: AggregateWorkerTesting.Registry}
   end
@@ -92,10 +97,10 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
                                 aggregate_id: "agg-45678",
                                 aggregate_number: 1,
                                 data:
-                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}"
+                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}",
+                                idempotency_key: "idempo-12345"
                               }
-                            ],
-                            idempotency_key: "idempo-12345" ->
+                            ] ->
         {:ok,
          [
            %Headwater.EventStore.RecordedEvent{
@@ -157,10 +162,10 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
                                 aggregate_id: "agg-45678",
                                 aggregate_number: 1,
                                 data:
-                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}"
+                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}",
+                                idempotency_key: "idempo-12345"
                               }
-                            ],
-                            idempotency_key: "idempo-12345" ->
+                            ] ->
         {:ok,
          [
            %Headwater.EventStore.RecordedEvent{

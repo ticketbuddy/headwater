@@ -95,10 +95,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
            Idempotency.key_status(aggregate_config, write_request.idempotency_key),
          {:ok, {aggregate_config, persist_events}} <-
            ExecuteWish.process(aggregate_config, write_request),
-         {:ok, recorded_events} <-
-           aggregate_config.event_store.commit(persist_events,
-             idempotency_key: write_request.idempotency_key
-           ),
+         {:ok, recorded_events} <- aggregate_config.event_store.commit(persist_events),
          {:ok, aggregate_config} <-
            NextState.process(aggregate_config, recorded_events) do
       {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}

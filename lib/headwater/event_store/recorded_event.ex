@@ -48,7 +48,7 @@ defmodule Headwater.EventStore.RecordedEvent do
       event_number: event.event_number,
       aggregate_number: event.aggregate_number,
       data: EventSerializer.deserialize(event.data),
-      created_at: event.created_at
+      created_at: event.inserted_at
     }
   end
 end
