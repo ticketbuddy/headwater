@@ -7,12 +7,13 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
       require Logger
 
-      alias Headwater.EventStoreAdapters.Postgres.{
+      alias Headwater.EventStore.Adapters.Postgres.{
         HeadwaterEventsSchema,
         HeadwaterEventBusSchema,
         HeadwaterIdempotencySchema,
         Commit
       }
+      alias Headwater.EventStore.RecordedEvent
 
       @impl Headwater.EventStore
       def commit(persist_events, idempotency_key: idempotency_key) do
@@ -25,19 +26,18 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
       @impl Headwater.EventStore
       def load_events(aggregate_id) do
-        {events, last_event_id} = fetch_events(aggregate_id)
         Logger.log(:info, "fetching all events for aggregate #{aggregate_id}.")
 
         import Ecto.Query, only: [from: 2]
 
-        from(event in HeadwaterEventsSchema,
+        recorded_events = from(event in HeadwaterEventsSchema,
           where: event.aggregate_id == ^aggregate_id,
           order_by: [asc: event.event_id]
         )
         |> @repo.all()
-        |> format_events()
+        |> Enum.map(&RecordedEvent.new/1)
 
-        {:ok, events, last_event_id}
+        {:ok, recorded_events}
       end
 
       @impl Headwater.EventStore
@@ -79,36 +79,11 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
       def get_event(event_ref) do
         @repo.get_by(HeadwaterEventsSchema, event_ref: event_ref)
-        |> List.wrap()
-        |> format_events()
         |> case do
-          {[event], last_event_id} -> {:ok, event}
-          _ -> {:error, :event_not_found}
+          nil -> {:error, :event_not_found}
+          event -> {:ok, RecordedEvent.new(event)}
         end
       end
-
-      defp format_events(events) do
-        serialised_events = serialise_events(events)
-
-        {serialised_events, last_event_id(events)}
-      end
-
-      defp serialise_events(events) do
-        Enum.map(events, fn event_schema ->
-          Map.put(
-            event_schema,
-            :event,
-            Headwater.EventStore.EventSerializer.deserialize(event_schema.event)
-          )
-        end)
-      end
-
-      defp last_event_id(events) when length(events) > 0 do
-        List.last(events)
-        |> Map.get(:event_id)
-      end
-
-      defp last_event_id(_events), do: 0
     end
   end
 end

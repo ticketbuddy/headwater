@@ -19,6 +19,9 @@ defmodule Headwater.EventStore.RecordedEvent do
 
   @type uuid :: String.t()
 
+  alias Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema
+  alias Headwater.EventStore.EventSerializer
+
   @type t :: %Headwater.EventStore.RecordedEvent{
           event_id: uuid(),
           event_number: non_neg_integer(),
@@ -27,4 +30,15 @@ defmodule Headwater.EventStore.RecordedEvent do
           data: struct(),
           created_at: DateTime.t()
         }
+
+  def new(event = %HeadwaterEventsSchema{}) do
+    %__MODULE__{
+      aggregate_id: event.aggregate_id,
+      event_id: event.event_id,
+      event_number: event.event_number,
+      aggregate_number: event.aggregate_number,
+      data: EventSerializer.deserialize(event.data),
+      created_at: event.created_at
+    }
+  end
 end

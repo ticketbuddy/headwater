@@ -25,7 +25,8 @@ defmodule Headwater.EventStore.Adapters.Postgres.Commit do
 
   def on_commit_result({:ok, change_data}) do
     # TODO: return list of Headwater.EventStore.RecordedEvent.t()
-    # change_data
+    IO.inspect(change_data, label: "change_data")
+
     :ok
   end
 

@@ -1,11 +1,11 @@
 defmodule Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema do
   use Ecto.Schema
+  @primary_key {:event_id, :binary_id, autogenerate: true}
   @timestamps_opts [type: :utc_datetime]
 
   alias Headwater.EventStore.PersistEvent
 
   schema "headwater_events" do
-    field(:event_id, :binary, primary_key: true)
     field(:aggregate_id, :string)
     field(:event_number, :integer)
     field(:aggregate_number, :integer)
