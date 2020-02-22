@@ -58,16 +58,9 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
     business_domain_events = get_in(events, [Access.all(), Access.key(:event)])
 
-    {:ok, aggregate_state, aggregate_number} =
-      NextState.process(aggregate, nil, business_domain_events)
+    {:ok, aggregate_config} = NextState.process(aggregate, business_domain_events)
 
-    state = %{
-      aggregate: aggregate,
-      aggregate_state: aggregate_state,
-      aggregate_number: aggregate_number
-    }
-
-    {:reply, :ok, state}
+    {:reply, :ok, aggregate_config}
   end
 
   @impl true
