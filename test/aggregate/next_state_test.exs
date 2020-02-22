@@ -8,8 +8,40 @@ defmodule Headwater.Aggregate.NextStateTest do
     end
   end
 
+  defmodule FakeErrorHandler do
+    def next_state(_state, _event) do
+      {:error, :not_enough_cold_water}
+    end
+  end
+
   describe "NextState.process/3" do
-    test "builds a state" do
+    test "when next_state fails" do
+      aggregate_config = %AggregateConfig{
+        id: "abc-123",
+        handler: FakeErrorHandler,
+        registry: nil,
+        supervisor: nil,
+        event_store: nil,
+        aggregate_state: 0,
+        aggregate_number: 1
+      }
+
+      recorded_events = [
+        %Headwater.EventStore.RecordedEvent{
+          aggregate_id: "counter-a",
+          event_id: "aaa-bbb-ccc-ddd-eee",
+          event_number: 50,
+          aggregate_number: 3,
+          data: 1,
+          created_at: ~U[2020-02-20 18:06:31.495494Z]
+        }
+      ]
+
+      assert {:error, :next_state, {:error, :not_enough_cold_water}} ==
+               NextState.process(aggregate_config, recorded_events)
+    end
+
+    test "builds a state successfully" do
       aggregate_config = %AggregateConfig{
         id: "abc-123",
         handler: FakeHandler,

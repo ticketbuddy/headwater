@@ -10,7 +10,7 @@ defmodule Headwater.Aggregate.NextState do
         [new_event | next_events]
       ) do
     case handler.next_state(aggregate_state, new_event.data) do
-      response = {:error, reason} ->
+      response = {:error, _reason} ->
         {:error, :next_state, response}
 
       new_aggregate_state ->
