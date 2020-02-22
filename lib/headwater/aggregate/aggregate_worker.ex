@@ -1,8 +1,7 @@
 defmodule Headwater.Aggregate.AggregateWorker do
   use GenServer
 
-  alias Headwater.Aggregate.AggregateConfig
-  alias Headwater.Aggregate.{NextState, ExecuteWish}
+  alias Headwater.Aggregate.{NextState, ExecuteWish, AggregateConfig, Idempotency}
   alias Headwater.AggregateDirectory.WriteRequest
   require Logger
 
@@ -92,8 +91,10 @@ defmodule Headwater.Aggregate.AggregateWorker do
       ) do
     aggregate_config = state
 
-    with {:ok, {aggregate_config, persist_events}} <-
-           ExecuteWish.process(aggregate_config, write_request.wish),
+    with {:ok, :idempotency_key_available} <-
+           Idempotency.key_status(aggregate_config, write_request.idempotency_key),
+         {:ok, {aggregate_config, persist_events}} <-
+           ExecuteWish.process(aggregate_config, write_request),
          {:ok, recorded_events} <-
            aggregate_config.event_store.commit(persist_events,
              idempotency_key: write_request.idempotency_key
@@ -102,21 +103,14 @@ defmodule Headwater.Aggregate.AggregateWorker do
            NextState.process(aggregate_config, recorded_events) do
       {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}
     else
-      {:error, :wish_already_completed} ->
+      {:error, :idempotency_key_used} ->
         {:reply, {:ok, aggregate_config.aggregate_state}, state}
 
       error = {:error, :execute, _} ->
-        case has_wish_previously_succeeded?(aggregate_config, write_request.idempotency_key) do
-          true -> {:reply, {:ok, aggregate_config.aggregate_state}, state}
-          false -> {:reply, error, state}
-        end
+        {:reply, error, state}
 
       error = {:error, :next_state, _} ->
         {:reply, error, state}
     end
-  end
-
-  defp has_wish_previously_succeeded?(aggregate_config, idempotency_key) do
-    aggregate_config.event_store.has_wish_previously_succeeded?(idempotency_key)
   end
 end

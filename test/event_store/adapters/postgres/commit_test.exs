@@ -5,43 +5,26 @@ defmodule Headwater.EventStore.Adapters.Postgres.CommitTest do
   alias Headwater.EventStore.Adapters.Postgres.Commit
   alias Headwater.EventStore.Adapters.Postgres.HeadwaterIdempotencySchema
 
-  describe "Commit.add_idempotency/2" do
-    test "adds idempotency check to a multi" do
-      idempotency_key = "idempo-12345"
-
-      multi_result = Commit.add_idempotency(Multi.new(), idempotency_key)
-
-      assert [
-               idempotency_check:
-                 {:insert,
-                  %Ecto.Changeset{
-                    action: :insert,
-                    changes: %{idempotency_key: "idempo-12345"},
-                    errors: [],
-                    data: %HeadwaterIdempotencySchema{},
-                    valid?: true
-                  }, []}
-             ] = Multi.to_list(multi_result)
-    end
-  end
-
   describe "add inserting a list of events for persistence" do
     test "adds the instructions to a multi" do
       persist_events = [
         %PersistEvent{
           data: "{}",
           aggregate_id: "fake-agg-one",
-          aggregate_number: 2
+          aggregate_number: 2,
+          idempotency_key: "idempo-45345"
         },
         %PersistEvent{
           data: "{}",
           aggregate_id: "fake-agg-one",
-          aggregate_number: 3
+          aggregate_number: 3,
+          idempotency_key: "idempo-45345"
         },
         %PersistEvent{
           data: "{}",
           aggregate_id: "fake-agg-one",
-          aggregate_number: 4
+          aggregate_number: 4,
+          idempotency_key: "idempo-45345"
         }
       ]
 

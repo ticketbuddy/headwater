@@ -14,7 +14,15 @@ defmodule Headwater.EventStore.RecordedEvent do
     created_at - The UTC datetime when the event was created.
   """
 
-  @enforce_keys [:aggregate_id, :event_id, :event_number, :aggregate_number, :data, :created_at]
+  @enforce_keys [
+    :aggregate_id,
+    :event_id,
+    :event_number,
+    :aggregate_number,
+    :data,
+    :created_at,
+    :idempotency_key
+  ]
   defstruct @enforce_keys
 
   @type uuid :: String.t()
@@ -28,13 +36,15 @@ defmodule Headwater.EventStore.RecordedEvent do
           aggregate_id: String.t(),
           aggregate_number: non_neg_integer(),
           data: struct(),
-          created_at: DateTime.t()
+          created_at: DateTime.t(),
+          idempotency_key: String.t()
         }
 
   def new(event = %HeadwaterEventsSchema{}) do
     %__MODULE__{
       aggregate_id: event.aggregate_id,
       event_id: event.event_id,
+      idempotency_key: event.idempotency_key,
       event_number: event.event_number,
       aggregate_number: event.aggregate_number,
       data: EventSerializer.deserialize(event.data),

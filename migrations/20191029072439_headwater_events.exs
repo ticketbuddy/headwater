@@ -1,4 +1,4 @@
-defmodule Example.Repo.Migrations.HeadwaterEvents do
+defmodule Headwater.Migrations.HeadwaterEvents do
   use Ecto.Migration
 
   def change do
@@ -7,11 +7,9 @@ defmodule Example.Repo.Migrations.HeadwaterEvents do
       add(:aggregate_id, :string, null: false)
       add(:event_id, :integer, null: false)
       add(:event, :text, null: false)
-      add(:idempotency_id, :binary, null: false)
+      add(:idempotency_key, :binary, null: false)
 
       timestamps()
     end
-
-    create unique_index("headwater_events", [:aggregate_id, :event_id])
   end
 end

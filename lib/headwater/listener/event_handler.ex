@@ -49,6 +49,6 @@ defmodule Headwater.Listener.EventHandler do
 
   defp build_causation_idempotency_key(handler, event) do
     (handler.listener_prefix() <> Integer.to_string(event.event_ref) <> event.aggregate_id)
-    |> Headwater.Listener.web_safe_md5()
+    |> Headwater.web_safe_md5()
   end
 end

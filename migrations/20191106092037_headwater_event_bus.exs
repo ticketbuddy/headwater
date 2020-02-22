@@ -1,4 +1,4 @@
-defmodule Example.Repo.Migrations.HeadwaterEventBus do
+defmodule Headwater.Repo.Migrations.HeadwaterEventBus do
   use Ecto.Migration
 
   def change do

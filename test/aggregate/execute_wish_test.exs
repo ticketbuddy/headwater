@@ -2,6 +2,7 @@ defmodule Headwater.Aggregate.ExecuteWishTest do
   use ExUnit.Case
 
   alias Headwater.Aggregate.{ExecuteWish, AggregateConfig}
+  alias Headwater.AggregateDirectory.WriteRequest
 
   defmodule Wish do
     defstruct value: 3
@@ -35,7 +36,12 @@ defmodule Headwater.Aggregate.ExecuteWishTest do
         aggregate_number: 37
       }
 
-      wish = %Wish{}
+      write_request = %WriteRequest{
+        wish: %Wish{},
+        aggregate_id: "abc-123",
+        handler: Handler,
+        idempotency_key: "idempo-1334"
+      }
 
       assert {:ok,
               {%Headwater.Aggregate.AggregateConfig{
@@ -57,7 +63,7 @@ defmodule Headwater.Aggregate.ExecuteWishTest do
                    data:
                      "{\"__struct__\":\"Elixir.Headwater.Aggregate.ExecuteWishTest.Event\",\"value\":15}"
                  }
-               ]}} = ExecuteWish.process(aggregate_config, wish)
+               ]}} = ExecuteWish.process(aggregate_config, write_request)
     end
 
     test "when execute returns an error" do
@@ -71,10 +77,15 @@ defmodule Headwater.Aggregate.ExecuteWishTest do
         aggregate_number: 37
       }
 
-      wish = %Wish{}
+      write_request = %WriteRequest{
+        wish: %Wish{},
+        aggregate_id: "abc-123",
+        handler: HandlerWithError,
+        idempotency_key: "idempo-1334"
+      }
 
       assert {:error, :execute, {:error, :not_enough_lemonade}} ==
-               ExecuteWish.process(aggregate_config, wish)
+               ExecuteWish.process(aggregate_config, write_request)
     end
   end
 end

@@ -10,15 +10,14 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       alias Headwater.EventStore.Adapters.Postgres.{
         HeadwaterEventsSchema,
         HeadwaterEventBusSchema,
-        HeadwaterIdempotencySchema,
         Commit
       }
+
       alias Headwater.EventStore.RecordedEvent
 
       @impl Headwater.EventStore
-      def commit(persist_events, idempotency_key: idempotency_key) do
+      def commit(persist_events) do
         Multi.new()
-        |> Commit.add_idempotency(idempotency_key)
         |> Commit.add_inserts(persist_events)
         |> @repo.transaction()
         |> Commit.on_commit_result()
@@ -30,23 +29,15 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
         import Ecto.Query, only: [from: 2]
 
-        recorded_events = from(event in HeadwaterEventsSchema,
-          where: event.aggregate_id == ^aggregate_id,
-          order_by: [asc: event.event_id]
-        )
-        |> @repo.all()
-        |> Enum.map(&RecordedEvent.new/1)
+        recorded_events =
+          from(event in HeadwaterEventsSchema,
+            where: event.aggregate_id == ^aggregate_id,
+            order_by: [asc: event.event_id]
+          )
+          |> @repo.all()
+          |> Enum.map(&RecordedEvent.new/1)
 
         {:ok, recorded_events}
-      end
-
-      @impl Headwater.EventStore
-      def has_wish_previously_succeeded?(idempotency_key) do
-        @repo.get_by(HeadwaterIdempotencySchema, idempotency_key: idempotency_key)
-        |> case do
-          nil -> false
-          _ -> true
-        end
       end
 
       def get_next_event_ref(bus_id, base_event_ref) do

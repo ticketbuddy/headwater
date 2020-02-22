@@ -1,5 +1,5 @@
 defmodule Headwater.Aggregate.NextState do
-  alias Headwater.Aggregate.AggregateConfig
+  alias Headwater.Aggregate.{AggregateConfig, Idempotency}
 
   def process(aggregate_config, []) do
     {:ok, aggregate_config}
@@ -15,6 +15,7 @@ defmodule Headwater.Aggregate.NextState do
 
       new_aggregate_state ->
         aggregate_config
+        |> Idempotency.store(recorded_event.idempotency_key)
         |> AggregateConfig.set_aggregate_state(new_aggregate_state)
         |> AggregateConfig.update_aggregate_number(recorded_event)
         |> process(recorded_events)

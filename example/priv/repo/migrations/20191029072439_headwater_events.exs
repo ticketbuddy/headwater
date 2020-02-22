@@ -8,11 +8,9 @@ defmodule Example.Repo.Migrations.HeadwaterEvents do
       add(:event_number, :bigserial, null: false)
       add(:aggregate_number, :bigserial, null: false)
       add(:data, :text, null: false)
-      add(:idempotency_id, :binary, null: false)
+      add(:idempotency_key, :binary, null: false)
 
       timestamps()
     end
-
-    create unique_index("headwater_events", [:aggregate_id, :event_id])
   end
 end

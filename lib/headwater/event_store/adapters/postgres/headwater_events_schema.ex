@@ -9,6 +9,8 @@ defmodule Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema do
     field(:aggregate_id, :string)
     field(:event_number, :integer)
     field(:aggregate_number, :integer)
+    field(:idempotency_key, :string)
+
     field(:data, :string)
 
     timestamps()
@@ -19,8 +21,8 @@ defmodule Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema do
     params = Map.from_struct(persist_event)
 
     %__MODULE__{}
-    |> cast(params, [:data, :aggregate_id, :aggregate_number])
-    |> validate_required([:data, :aggregate_id, :aggregate_number])
+    |> cast(params, [:data, :aggregate_id, :aggregate_number, :idempotency_key])
+    |> validate_required([:data, :aggregate_id, :aggregate_number, :idempotency_key])
     |> unique_constraint(:out_of_sync_with_event_store,
       name: :headwater_events_aggregate_id_event_id_index
     )
