@@ -23,14 +23,14 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
   describe "starting a new aggregate worker" do
     test "loads events and builds aggregate state", %{registry: registry, supervisor: supervisor} do
       FakeApp.EventStoreMock
-      |> expect(:load_events, fn "aggregate-id-abc" ->
+      |> expect(:load_events, fn "aggregate-id-abcdef" ->
         {:ok,
          [
            %Headwater.EventStore.RecordedEvent{
-             aggregate_id: "counter-a",
+             aggregate_id: "aggregate-id-abcdef",
              event_id: "aaa-bbb-ccc-ddd-eee",
              event_number: 50,
-             aggregate_number: 3,
+             aggregate_number: 1,
              data: 1,
              created_at: ~U[2020-02-20 18:06:31.495494Z]
            }
@@ -42,18 +42,18 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
         5
       end)
 
-      start_result =
-        %AggregateConfig{
-          id: "aggregate-id-abc",
-          handler: Headwater.Aggregate.HandlerMock,
-          registry: registry,
-          supervisor: supervisor,
-          event_store: FakeApp.EventStoreMock,
-          aggregate_state: nil
-        }
-        |> AggregateWorker.new()
+      aggregate_config = %AggregateConfig{
+        id: "aggregate-id-abcdef",
+        handler: Headwater.Aggregate.HandlerMock,
+        registry: registry,
+        supervisor: supervisor,
+        event_store: FakeApp.EventStoreMock,
+        aggregate_state: nil
+      }
 
-      assert {:ok, _pid} = start_result
+      assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
+      assert {:ok, 5} == AggregateWorker.current_state(aggregate_config)
+      assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
     end
   end
 end

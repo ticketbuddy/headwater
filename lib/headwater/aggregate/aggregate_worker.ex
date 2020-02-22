@@ -26,6 +26,10 @@ defmodule Headwater.Aggregate.AggregateWorker do
     GenServer.call(via_tuple(aggregate), :state)
   end
 
+  def latest_aggregate_number(aggregate) do
+    GenServer.call(via_tuple(aggregate), :aggregate_number)
+  end
+
   defp via_tuple(aggregate) do
     {:via, Registry, {aggregate.registry, aggregate.id}}
   end
@@ -67,8 +71,18 @@ defmodule Headwater.Aggregate.AggregateWorker do
         _from,
         state
       ) do
-    %AggregateConfig{aggregate_number: aggregate_number, aggregate_state: aggregate_state} = state
-    {:reply, {:ok, {aggregate_number, aggregate_state}}, state}
+    %AggregateConfig{aggregate_state: aggregate_state} = state
+    {:reply, {:ok, aggregate_state}, state}
+  end
+
+  @impl true
+  def handle_call(
+        :aggregate_number,
+        _from,
+        state
+      ) do
+    %AggregateConfig{aggregate_number: aggregate_number} = state
+    {:reply, {:ok, aggregate_number}, state}
   end
 
   def handle_call(

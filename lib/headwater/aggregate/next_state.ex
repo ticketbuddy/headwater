@@ -7,15 +7,17 @@ defmodule Headwater.Aggregate.NextState do
 
   def process(
         aggregate_config = %AggregateConfig{handler: handler, aggregate_state: aggregate_state},
-        [new_event | next_events]
+        [recorded_event | recorded_events]
       ) do
-    case handler.next_state(aggregate_state, new_event.data) do
+    case handler.next_state(aggregate_state, recorded_event.data) do
       response = {:error, _reason} ->
         {:error, :next_state, response}
 
       new_aggregate_state ->
-        AggregateConfig.set_aggregate_state(aggregate_config, new_aggregate_state)
-        |> process(next_events)
+        aggregate_config
+        |> AggregateConfig.set_aggregate_state(new_aggregate_state)
+        |> AggregateConfig.update_aggregate_number(recorded_event)
+        |> process(recorded_events)
     end
   end
 end

@@ -41,7 +41,7 @@ defmodule Headwater.Aggregate.NextStateTest do
                NextState.process(aggregate_config, recorded_events)
     end
 
-    test "builds a state successfully" do
+    test "builds a state successfully, and keeps track of :aggregate_number" do
       aggregate_config = %AggregateConfig{
         id: "abc-123",
         handler: FakeHandler,
@@ -83,7 +83,7 @@ defmodule Headwater.Aggregate.NextStateTest do
 
       assert {:ok,
               %Headwater.Aggregate.AggregateConfig{
-                aggregate_number: 1,
+                aggregate_number: 5,
                 aggregate_state: 11,
                 event_store: nil,
                 handler: Headwater.Aggregate.NextStateTest.FakeHandler,
