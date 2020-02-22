@@ -1,8 +1,9 @@
 defmodule ExampleTest do
   use ExUnit.Case
-  doctest Example
+  use Headwater.TestHelper, event_store_repo: Example.Repo
 
-  test "greets the world" do
-    assert {} == Example.inc(%Example.Increment{counter_id: "abc", increment_by: 5})
+  test "increments a counter and returns the state in an :ok tuple" do
+    assert {:ok, %Example.Counter{total: 5}} ==
+             Example.inc(%Example.Increment{counter_id: "abc", increment_by: 5})
   end
 end
