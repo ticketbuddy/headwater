@@ -4,7 +4,7 @@ defmodule Headwater.EventStore.PersistEvent do
   """
   alias Headwater.EventStore.EventSerializer
 
-  @enforce_keys [:data, :aggregate_id, :aggregate_number]
+  @enforce_keys [:data, :aggregate_id, :aggregate_number, :idempotency_key]
   defstruct @enforce_keys
 
   @type uuid :: String.t()
@@ -14,11 +14,12 @@ defmodule Headwater.EventStore.PersistEvent do
           data: String.t()
         }
 
-  def new(data, aggregate_config) do
+  def new(data, aggregate_config, write_request) do
     %__MODULE__{
       aggregate_id: aggregate_config.id,
       aggregate_number: aggregate_config.aggregate_number,
-      data: EventSerializer.serialize(data)
+      data: EventSerializer.serialize(data),
+      idempotency_key: write_request.idempotency_key
     }
   end
 end

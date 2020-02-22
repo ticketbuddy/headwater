@@ -1,15 +1,8 @@
 defmodule Headwater.EventStore.Adapters.Postgres.Commit do
   require Logger
   alias Ecto.Multi
-  alias Headwater.EventStore.Adapters.Postgres.{HeadwaterEventsSchema, HeadwaterIdempotencySchema}
-
-  def add_idempotency(multi, idempotency_key) do
-    multi
-    |> Multi.insert(
-      :idempotency_check,
-      HeadwaterIdempotencySchema.changeset(%{idempotency_key: idempotency_key})
-    )
-  end
+  alias Headwater.EventStore.RecordedEvent
+  alias Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema
 
   def add_inserts(multi, persist_events) do
     persist_events
@@ -24,9 +17,13 @@ defmodule Headwater.EventStore.Adapters.Postgres.Commit do
   end
 
   def on_commit_result({:ok, change_data}) do
-    # TODO: return list of Headwater.EventStore.RecordedEvent.t()
-    # change_data
-    :ok
+    recorded_events =
+      change_data
+      |> Map.values()
+      |> Enum.map(&RecordedEvent.new/1)
+      |> Enum.sort(&(&1.event_number < &2.event_number))
+
+    {:ok, recorded_events}
   end
 
   def on_commit_result(

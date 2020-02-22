@@ -12,9 +12,8 @@ defmodule Headwater.EventStore do
   @type idempotency_key :: String.t()
   @type event_number :: non_neg_integer()
 
-  @callback commit([persist_event], idempotency_key: idempotency_key) :: {:ok, [recorded_event]}
+  @callback commit([persist_event]) :: {:ok, [recorded_event]}
   @callback load_events(aggregate_id) :: {:ok, [recorded_event]}
   @callback event_handled(listener_id: listener_id, event_number: event_number) :: :ok
   @callback get_event(event_id) :: {:ok, recorded_event}
-  @callback has_wish_previously_succeeded?(idempotency_key) :: true | false
 end

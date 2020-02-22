@@ -33,7 +33,8 @@ defmodule Headwater.Aggregate.NextStateTest do
           event_number: 50,
           aggregate_number: 3,
           data: 1,
-          created_at: ~U[2020-02-20 18:06:31.495494Z]
+          created_at: ~U[2020-02-20 18:06:31.495494Z],
+          idempotency_key: "idempo-4535"
         }
       ]
 
@@ -59,7 +60,8 @@ defmodule Headwater.Aggregate.NextStateTest do
           event_number: 50,
           aggregate_number: 3,
           data: 1,
-          created_at: ~U[2020-02-20 18:06:31.495494Z]
+          created_at: ~U[2020-02-20 18:06:31.495494Z],
+          idempotency_key: "idempo-4535"
         },
         %Headwater.EventStore.RecordedEvent{
           aggregate_id: "counter-a",
@@ -67,7 +69,8 @@ defmodule Headwater.Aggregate.NextStateTest do
           event_number: 52,
           aggregate_number: 4,
           data: 3,
-          created_at: ~U[2020-02-20 18:06:31.495494Z]
+          created_at: ~U[2020-02-20 18:06:31.495494Z],
+          idempotency_key: "idempo-4535"
         },
         %Headwater.EventStore.RecordedEvent{
           aggregate_id: "counter-a",
@@ -75,7 +78,8 @@ defmodule Headwater.Aggregate.NextStateTest do
           event_number: 56,
           aggregate_number: 5,
           data: 7,
-          created_at: ~U[2020-02-20 18:06:31.495494Z]
+          created_at: ~U[2020-02-20 18:06:31.495494Z],
+          idempotency_key: "idempo-4535"
         }
       ]
 

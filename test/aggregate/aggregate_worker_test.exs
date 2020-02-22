@@ -15,7 +15,12 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
 
   setup do
     {:ok, supervisor_pid} = DynamicSupervisor.start_link(MySupervisor, {:ok, %{}})
-    {:ok, _} = Registry.start_link(keys: :unique, name: AggregateWorkerTesting.Registry)
+
+    case Registry.start_link(keys: :unique, name: AggregateWorkerTesting.Registry) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+      _error -> raise "registry not started."
+    end
 
     %{supervisor: supervisor_pid, registry: AggregateWorkerTesting.Registry}
   end
@@ -32,7 +37,8 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
              event_number: 50,
              aggregate_number: 1,
              data: 1,
-             created_at: ~U[2020-02-20 18:06:31.495494Z]
+             created_at: ~U[2020-02-20 18:06:31.495494Z],
+             idempotency_key: "idempo-4535"
            }
          ]}
       end)
@@ -91,10 +97,10 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
                                 aggregate_id: "agg-45678",
                                 aggregate_number: 1,
                                 data:
-                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}"
+                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}",
+                                idempotency_key: "idempo-12345"
                               }
-                            ],
-                            idempotency_key: "idempo-12345" ->
+                            ] ->
         {:ok,
          [
            %Headwater.EventStore.RecordedEvent{
@@ -103,7 +109,8 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
              event_number: 50,
              aggregate_number: 1,
              data: %Event{},
-             created_at: ~U[2020-02-20 18:06:31.495494Z]
+             created_at: ~U[2020-02-20 18:06:31.495494Z],
+             idempotency_key: "idempo-4535"
            }
          ]}
       end)
@@ -155,10 +162,10 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
                                 aggregate_id: "agg-45678",
                                 aggregate_number: 1,
                                 data:
-                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}"
+                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}",
+                                idempotency_key: "idempo-12345"
                               }
-                            ],
-                            idempotency_key: "idempo-12345" ->
+                            ] ->
         {:ok,
          [
            %Headwater.EventStore.RecordedEvent{
@@ -167,7 +174,8 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
              event_number: 50,
              aggregate_number: 1,
              data: %Event{},
-             created_at: ~U[2020-02-20 18:06:31.495494Z]
+             created_at: ~U[2020-02-20 18:06:31.495494Z],
+             idempotency_key: "idempo-4535"
            }
          ]}
       end)
@@ -197,48 +205,6 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       assert {:ok, 0} == AggregateWorker.latest_aggregate_number(aggregate_config)
     end
 
-    test "when commit reveals that wish has already been completed", %{
-      registry: registry,
-      supervisor: supervisor
-    } do
-      FakeApp.EventStoreMock
-      |> expect(:load_events, fn "agg-45678" ->
-        {:ok, []}
-      end)
-
-      Headwater.Aggregate.HandlerMock
-      |> expect(:execute, fn _current_state, wish = %Wish{} ->
-        {:ok, %Event{value: wish.value}}
-      end)
-
-      FakeApp.EventStoreMock
-      |> expect(:commit, fn _persist_events, _opts ->
-        {:error, :wish_already_completed}
-      end)
-
-      aggregate_config = %AggregateConfig{
-        id: "agg-45678",
-        handler: Headwater.Aggregate.HandlerMock,
-        registry: registry,
-        supervisor: supervisor,
-        event_store: FakeApp.EventStoreMock,
-        aggregate_state: 34589,
-        aggregate_number: 1
-      }
-
-      write_request = %WriteRequest{
-        aggregate_id: "agg-45678",
-        handler: Headwater.Aggregate.HandlerMock,
-        wish: %Wish{},
-        idempotency_key: "idempo-12345"
-      }
-
-      assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
-      assert {:ok, 34589} = AggregateWorker.propose_wish(aggregate_config, write_request)
-      assert {:ok, 34589} == AggregateWorker.current_state(aggregate_config)
-      assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
-    end
-
     test "when there is an execute error, but the wish HAS been requested already", %{
       registry: registry,
       supervisor: supervisor
@@ -248,16 +214,6 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
         {:ok, []}
       end)
 
-      Headwater.Aggregate.HandlerMock
-      |> expect(:execute, fn _current_state, _wish = %Wish{} ->
-        {:error, :not_enough_lemonade}
-      end)
-
-      FakeApp.EventStoreMock
-      |> expect(:has_wish_previously_succeeded?, fn "idempo-12345" ->
-        true
-      end)
-
       aggregate_config = %AggregateConfig{
         id: "agg-45678",
         handler: Headwater.Aggregate.HandlerMock,
@@ -274,6 +230,8 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
         wish: %Wish{},
         idempotency_key: "idempo-12345"
       }
+
+      Headwater.Aggregate.Idempotency.store(aggregate_config, "idempo-12345")
 
       assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
       assert {:ok, 34589} = AggregateWorker.propose_wish(aggregate_config, write_request)
@@ -293,11 +251,6 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       Headwater.Aggregate.HandlerMock
       |> expect(:execute, fn _current_state, _wish = %Wish{} ->
         {:error, :not_enough_lemonade}
-      end)
-
-      FakeApp.EventStoreMock
-      |> expect(:has_wish_previously_succeeded?, fn "idempo-12345" ->
-        false
       end)
 
       aggregate_config = %AggregateConfig{

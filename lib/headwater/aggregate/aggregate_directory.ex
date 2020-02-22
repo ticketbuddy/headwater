@@ -15,11 +15,11 @@ defmodule Headwater.AggregateDirectory do
   end
 
   defmodule Result do
-    def new({:ok, %AggregateConfig{aggregate_number: 0, aggregate_state: nil}}) do
+    def new({:ok, nil}) do
       {:warn, :empty_aggregate}
     end
 
-    def new({:ok, %AggregateConfig{aggregate_state: aggregate_state}}) do
+    def new({:ok, aggregate_state}) do
       {:ok, aggregate_state}
     end
 
