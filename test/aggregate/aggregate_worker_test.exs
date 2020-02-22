@@ -129,5 +129,201 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       assert {:ok, 5} == AggregateWorker.current_state(aggregate_config)
       assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
     end
+
+    test "when next_state fails", %{
+      registry: registry,
+      supervisor: supervisor
+    } do
+      FakeApp.EventStoreMock
+      |> expect(:load_events, fn "agg-45678" ->
+        {:ok, []}
+      end)
+
+      Headwater.Aggregate.HandlerMock
+      |> expect(:execute, fn _current_state = nil, wish = %Wish{} ->
+        {:ok, %Event{value: wish.value}}
+      end)
+
+      Headwater.Aggregate.HandlerMock
+      |> expect(:next_state, fn current_state, event ->
+        {:error, :not_enough_fuzz}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:commit, fn [
+                              %Headwater.EventStore.PersistEvent{
+                                aggregate_id: "agg-45678",
+                                aggregate_number: 1,
+                                data:
+                                  "{\"__struct__\":\"Elixir.Headwater.Aggregate.AggregateWorkerTest.Event\",\"value\":5}"
+                              }
+                            ],
+                            idempotency_key: "idempo-12345" ->
+        {:ok,
+         [
+           %Headwater.EventStore.RecordedEvent{
+             aggregate_id: "agg-45678",
+             event_id: "aaa-bbb-ccc-ddd-eee",
+             event_number: 50,
+             aggregate_number: 1,
+             data: %Event{},
+             created_at: ~U[2020-02-20 18:06:31.495494Z]
+           }
+         ]}
+      end)
+
+      aggregate_config = %AggregateConfig{
+        id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        registry: registry,
+        supervisor: supervisor,
+        event_store: FakeApp.EventStoreMock,
+        aggregate_state: nil
+      }
+
+      write_request = %WriteRequest{
+        aggregate_id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        wish: %Wish{},
+        idempotency_key: "idempo-12345"
+      }
+
+      assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
+
+      assert {:error, :next_state, {:error, :not_enough_fuzz}} =
+               AggregateWorker.propose_wish(aggregate_config, write_request)
+
+      assert {:ok, nil} == AggregateWorker.current_state(aggregate_config)
+      assert {:ok, 0} == AggregateWorker.latest_aggregate_number(aggregate_config)
+    end
+
+    test "when commit reveals that wish has already been completed", %{
+      registry: registry,
+      supervisor: supervisor
+    } do
+      FakeApp.EventStoreMock
+      |> expect(:load_events, fn "agg-45678" ->
+        {:ok, []}
+      end)
+
+      Headwater.Aggregate.HandlerMock
+      |> expect(:execute, fn _current_state, wish = %Wish{} ->
+        {:ok, %Event{value: wish.value}}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:commit, fn _persist_events, _opts ->
+        {:error, :wish_already_completed}
+      end)
+
+      aggregate_config = %AggregateConfig{
+        id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        registry: registry,
+        supervisor: supervisor,
+        event_store: FakeApp.EventStoreMock,
+        aggregate_state: 34589,
+        aggregate_number: 1
+      }
+
+      write_request = %WriteRequest{
+        aggregate_id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        wish: %Wish{},
+        idempotency_key: "idempo-12345"
+      }
+
+      assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
+      assert {:ok, 34589} = AggregateWorker.propose_wish(aggregate_config, write_request)
+      assert {:ok, 34589} == AggregateWorker.current_state(aggregate_config)
+      assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
+    end
+
+    test "when there is an execute error, but the wish HAS been requested already", %{
+      registry: registry,
+      supervisor: supervisor
+    } do
+      FakeApp.EventStoreMock
+      |> expect(:load_events, fn "agg-45678" ->
+        {:ok, []}
+      end)
+
+      Headwater.Aggregate.HandlerMock
+      |> expect(:execute, fn _current_state, wish = %Wish{} ->
+        {:error, :not_enough_lemonade}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:has_wish_previously_succeeded?, fn "idempo-12345" ->
+        true
+      end)
+
+      aggregate_config = %AggregateConfig{
+        id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        registry: registry,
+        supervisor: supervisor,
+        event_store: FakeApp.EventStoreMock,
+        aggregate_state: 34589,
+        aggregate_number: 1
+      }
+
+      write_request = %WriteRequest{
+        aggregate_id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        wish: %Wish{},
+        idempotency_key: "idempo-12345"
+      }
+
+      assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
+      assert {:ok, 34589} = AggregateWorker.propose_wish(aggregate_config, write_request)
+      assert {:ok, 34589} == AggregateWorker.current_state(aggregate_config)
+      assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
+    end
+
+    test "when there is an execute error, but the wish has NOT been requested already", %{
+      registry: registry,
+      supervisor: supervisor
+    } do
+      FakeApp.EventStoreMock
+      |> expect(:load_events, fn "agg-45678" ->
+        {:ok, []}
+      end)
+
+      Headwater.Aggregate.HandlerMock
+      |> expect(:execute, fn _current_state, wish = %Wish{} ->
+        {:error, :not_enough_lemonade}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:has_wish_previously_succeeded?, fn "idempo-12345" ->
+        false
+      end)
+
+      aggregate_config = %AggregateConfig{
+        id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        registry: registry,
+        supervisor: supervisor,
+        event_store: FakeApp.EventStoreMock,
+        aggregate_state: 34589,
+        aggregate_number: 1
+      }
+
+      write_request = %WriteRequest{
+        aggregate_id: "agg-45678",
+        handler: Headwater.Aggregate.HandlerMock,
+        wish: %Wish{},
+        idempotency_key: "idempo-12345"
+      }
+
+      assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
+
+      assert {:error, :execute, {:error, :not_enough_lemonade}} =
+               AggregateWorker.propose_wish(aggregate_config, write_request)
+
+      assert {:ok, 34589} == AggregateWorker.current_state(aggregate_config)
+      assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
+    end
   end
 end
