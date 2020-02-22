@@ -145,7 +145,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       end)
 
       Headwater.Aggregate.HandlerMock
-      |> expect(:next_state, fn current_state, event ->
+      |> expect(:next_state, fn _current_state, _event ->
         {:error, :not_enough_fuzz}
       end)
 
@@ -249,7 +249,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       end)
 
       Headwater.Aggregate.HandlerMock
-      |> expect(:execute, fn _current_state, wish = %Wish{} ->
+      |> expect(:execute, fn _current_state, _wish = %Wish{} ->
         {:error, :not_enough_lemonade}
       end)
 
@@ -291,7 +291,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       end)
 
       Headwater.Aggregate.HandlerMock
-      |> expect(:execute, fn _current_state, wish = %Wish{} ->
+      |> expect(:execute, fn _current_state, _wish = %Wish{} ->
         {:error, :not_enough_lemonade}
       end)
 
