@@ -4,6 +4,7 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       @behaviour Headwater.EventStore
       @repo unquote(repo)
       alias Ecto.Multi
+      @read_batch 100
 
       require Logger
 
@@ -24,20 +25,50 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       end
 
       @impl Headwater.EventStore
-      def load_events(aggregate_id) do
-        Logger.log(:info, "fetching all events for aggregate #{aggregate_id}.")
+      def load_events(aggregate_id, from_event \\ 0) do
+        recorded_events_stream = stream_events(aggregate_id, from_event)
 
+        {:ok, recorded_events_stream}
+      end
+
+      defp stream_events(aggregate_id, from_event_number) do
+        Elixir.Stream.resource(
+          fn -> from_event_number end,
+          fn next_event_number ->
+            case read_and_decode_events(aggregate_id, next_event_number) do
+              {:ok, []} -> {:halt, next_event_number}
+              {:ok, events} -> {events, next_event_number + length(events)}
+            end
+          end,
+          fn _ -> :ok end
+        )
+      end
+
+      defp read_and_decode_events(aggregate_id, from_event_number) do
+        case read_events_from_db(aggregate_id, from_event_number) do
+          {:ok, recorded_events} ->
+            deserialized_events = recorded_events |> Enum.map(&RecordedEvent.new/1)
+
+            {:ok, deserialized_events}
+
+          {:error, _error} = reply ->
+            reply
+        end
+      end
+
+      defp read_events_from_db(aggregate_id, from_event_number) do
         import Ecto.Query, only: [from: 2]
 
-        recorded_events =
+        bare_events =
           from(event in HeadwaterEventsSchema,
-            where: event.aggregate_id == ^aggregate_id,
-            order_by: [asc: event.event_id]
+            where:
+              event.aggregate_id == ^aggregate_id and event.event_number > ^from_event_number,
+            order_by: [asc: event.event_number],
+            limit: @read_batch
           )
           |> @repo.all()
-          |> Enum.map(&RecordedEvent.new/1)
 
-        {:ok, recorded_events}
+        {:ok, bare_events}
       end
 
       def get_next_event_ref(bus_id, base_event_ref) do
