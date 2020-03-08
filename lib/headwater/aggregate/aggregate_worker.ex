@@ -53,13 +53,9 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
   def handle_call({:load_state_from_events, aggregate_id}, _from, state) do
     aggregate = state
-    # TODO: EventStore.load/1 loads all the events into memory
-    # before processing them to obtain the next state.
-    # There must be a more efficient way of doing this...
-
     {:ok, recorded_events} = aggregate.event_store.load_events(aggregate.id)
 
-    {:ok, aggregate_config} = NextState.process(aggregate, recorded_events)
+    {:ok, aggregate_config} = NextState.process(aggregate, Enum.to_list(recorded_events))
 
     {:reply, :ok, aggregate_config}
   end

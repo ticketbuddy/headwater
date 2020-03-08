@@ -31,4 +31,8 @@ defmodule ExampleTest do
     assert {:warn, :empty_aggregate} ==
              Example.read_counter("a-nothing-counter")
   end
+
+  test "loads state of aggregate when number of events for the aggregate is above the batch read size" do
+    assert {:ok, %Example.Counter{total: 17500}} == Example.read_counter("many-events")
+  end
 end
