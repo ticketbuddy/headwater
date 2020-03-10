@@ -28,7 +28,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
   describe "starting a new aggregate worker" do
     test "loads events and builds aggregate state", %{registry: registry, supervisor: supervisor} do
       FakeApp.EventStoreMock
-      |> expect(:load_events, fn "aggregate-id-abcdef" ->
+      |> expect(:load_events_for_aggregate, fn "aggregate-id-abcdef" ->
         {:ok,
          [
            %Headwater.EventStore.RecordedEvent{
@@ -77,7 +77,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       supervisor: supervisor
     } do
       FakeApp.EventStoreMock
-      |> expect(:load_events, fn "agg-45678" ->
+      |> expect(:load_events_for_aggregate, fn "agg-45678" ->
         {:ok, []}
       end)
 
@@ -142,7 +142,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       supervisor: supervisor
     } do
       FakeApp.EventStoreMock
-      |> expect(:load_events, fn "agg-45678" ->
+      |> expect(:load_events_for_aggregate, fn "agg-45678" ->
         {:ok, []}
       end)
 
@@ -210,7 +210,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       supervisor: supervisor
     } do
       FakeApp.EventStoreMock
-      |> expect(:load_events, fn "agg-45678" ->
+      |> expect(:load_events_for_aggregate, fn "agg-45678" ->
         {:ok, []}
       end)
 
@@ -244,7 +244,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       supervisor: supervisor
     } do
       FakeApp.EventStoreMock
-      |> expect(:load_events, fn "agg-45678" ->
+      |> expect(:load_events_for_aggregate, fn "agg-45678" ->
         {:ok, []}
       end)
 

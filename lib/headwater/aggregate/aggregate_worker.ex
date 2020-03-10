@@ -53,7 +53,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
   def handle_call({:load_state_from_events, aggregate_id}, _from, state) do
     aggregate = state
-    {:ok, recorded_events} = aggregate.event_store.load_events(aggregate.id)
+    {:ok, recorded_events} = aggregate.event_store.load_events_for_aggregate(aggregate.id)
 
     {:ok, aggregate_config} = NextState.process(aggregate, Enum.to_list(recorded_events))
 

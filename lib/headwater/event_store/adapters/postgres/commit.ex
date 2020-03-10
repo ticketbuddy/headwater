@@ -4,6 +4,8 @@ defmodule Headwater.EventStore.Adapters.Postgres.Commit do
   alias Headwater.EventStore.RecordedEvent
   alias Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema
 
+  def start, do: Multi.new()
+
   def add_inserts(multi, persist_events) do
     persist_events
     |> Enum.reduce(multi, fn persist_event, multi ->

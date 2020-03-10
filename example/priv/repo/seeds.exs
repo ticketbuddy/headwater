@@ -14,4 +14,19 @@ alias Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema
   })
 end)
 
+
+0..5
+|> Enum.each(fn index ->
+  Example.Repo.insert!(%HeadwaterEventsSchema{
+    aggregate_id: "not-so-many-events",
+    aggregate_number: index,
+    data: Headwater.EventStore.EventSerializer.serialize(%Example.Incremented{counter_id: "not-so-many-events", increment_by: 7}),
+    event_id: UUID.uuid4(),
+    event_number: index,
+    idempotency_key: "bd19be94bb0ea88527e88a242d359e45",
+    inserted_at: ~U[2020-02-22 19:09:35Z],
+    updated_at: ~U[2020-02-22 19:09:35Z]
+  })
+end)
+
 IO.puts "seeds done..."
