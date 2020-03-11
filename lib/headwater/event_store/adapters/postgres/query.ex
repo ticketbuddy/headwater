@@ -7,6 +7,23 @@ defmodule Headwater.EventStore.Adapters.Postgres.Query do
     HeadwaterEventBusSchema
   }
 
+  def next_recorded_events_for_listener(bus_id, opts) do
+    # TODO: can an SQL query determine which recorded events
+    # a listener has not yet played
+
+    {from_event_number, opts} = Keyword.pop(opts, :from_event_number, 0)
+    {read_batch_size, opts} = Keyword.pop(opts, :read_batch, @default_batch_read_size)
+
+    from(event in HeadwaterEventsSchema,
+      left_join: event_bus in HeadwaterEventBusSchema,
+      on: event_bus.event_ref == event.event_number,
+      where: event.event_number > ^from_event_number,
+      # where: event_bus.bus_id == ^bus_id,
+      order_by: [asc: event.event_number],
+      limit: ^read_batch_size
+    )
+  end
+
   def recorded_events(opts) do
     {from_event_number, opts} = Keyword.pop(opts, :from_event_number, 0)
     {read_batch_size, opts} = Keyword.pop(opts, :read_batch, @default_batch_read_size)

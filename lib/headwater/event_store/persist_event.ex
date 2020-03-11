@@ -1,6 +1,8 @@
 defmodule Headwater.EventStore.PersistEvent do
   @moduledoc """
   PersistEvent represents an event before being persisted.
+
+  NOTE: This means we won't know the `event_number` at this stage.
   """
   alias Headwater.EventStore.EventSerializer
 

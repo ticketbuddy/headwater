@@ -41,6 +41,20 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       end
 
       @impl Headwater.EventStore
+      def next_recorded_events_for_listener(bus_id, starting_event_number \\ 0) do
+        recorded_events_stream =
+          ReadStream.read(
+            fn next_event_number ->
+              Query.next_recorded_events_for_listener(bus_id, from_event_number: next_event_number)
+              |> execute__and_decode_events()
+            end,
+            starting_event_number: starting_event_number
+          )
+
+        {:ok, recorded_events_stream}
+      end
+
+      @impl Headwater.EventStore
       def load_events_for_aggregate(aggregate_id, starting_event_number \\ 0) do
         recorded_events_stream =
           ReadStream.read(
