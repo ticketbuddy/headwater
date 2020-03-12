@@ -11,74 +11,60 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       alias Headwater.EventStore.Adapters.Postgres.{
         HeadwaterEventsSchema,
         HeadwaterEventBusSchema,
-        Commit
+        Commit,
+        Query,
+        ReadStream
       }
 
       alias Headwater.EventStore.RecordedEvent
 
       @impl Headwater.EventStore
       def commit(persist_events) do
-        Multi.new()
+        Commit.start()
         |> Commit.add_inserts(persist_events)
         |> @repo.transaction()
         |> Commit.on_commit_result()
       end
 
       @impl Headwater.EventStore
-      def load_events(aggregate_id, from_event \\ 0) do
-        recorded_events_stream = stream_events(aggregate_id, from_event)
+      def load_events(starting_event_number \\ 0) do
+        recorded_events_stream =
+          ReadStream.read(
+            fn next_event_number ->
+              Query.recorded_events(from_event_number: next_event_number)
+              |> execute__and_decode_events()
+            end,
+            starting_event_number: starting_event_number
+          )
 
         {:ok, recorded_events_stream}
       end
 
-      defp stream_events(aggregate_id, from_event_number) do
-        Elixir.Stream.resource(
-          fn -> from_event_number end,
-          fn next_event_number ->
-            case read_and_decode_events(aggregate_id, next_event_number) do
-              {:ok, []} -> {:halt, next_event_number}
-              {:ok, events} -> {events, next_event_number + length(events)}
-            end
-          end,
-          fn _ -> :ok end
-        )
-      end
-
-      defp read_and_decode_events(aggregate_id, from_event_number) do
-        case read_events_from_db(aggregate_id, from_event_number) do
-          {:ok, recorded_events} ->
-            deserialized_events = recorded_events |> Enum.map(&RecordedEvent.new/1)
-
-            {:ok, deserialized_events}
-
-          {:error, _error} = reply ->
-            reply
-        end
-      end
-
-      defp read_events_from_db(aggregate_id, from_event_number) do
-        import Ecto.Query, only: [from: 2]
-
-        bare_events =
-          from(event in HeadwaterEventsSchema,
-            where:
-              event.aggregate_id == ^aggregate_id and event.event_number > ^from_event_number,
-            order_by: [asc: event.event_number],
-            limit: @read_batch
+      @impl Headwater.EventStore
+      def load_events_for_aggregate(aggregate_id, starting_event_number \\ 0) do
+        recorded_events_stream =
+          ReadStream.read(
+            fn next_event_number ->
+              Query.recorded_events(aggregate_id, from_event_number: next_event_number)
+              |> execute__and_decode_events()
+            end,
+            starting_event_number: starting_event_number
           )
-          |> @repo.all()
 
-        {:ok, bare_events}
+        {:ok, recorded_events_stream}
+      end
+
+      defp execute__and_decode_events(query) do
+        deserialized_events =
+          query
+          |> @repo.all()
+          |> Enum.map(&RecordedEvent.new/1)
+
+        {:ok, deserialized_events}
       end
 
       def get_next_event_ref(bus_id, base_event_ref) do
-        import Ecto.Query, only: [from: 2]
-
-        from(event in HeadwaterEventBusSchema,
-          where: event.bus_id == ^bus_id,
-          order_by: [desc: event.event_ref],
-          limit: ^1
-        )
+        Query.event_bus_next_event_number(bus_id)
         |> @repo.one()
         |> case do
           nil -> base_event_ref
@@ -97,14 +83,6 @@ defmodule Headwater.EventStore.Adapters.Postgres do
         }
         |> HeadwaterEventBusSchema.changeset()
         |> @repo.insert()
-      end
-
-      def get_event(event_ref) do
-        @repo.get_by(HeadwaterEventsSchema, event_ref: event_ref)
-        |> case do
-          nil -> {:error, :event_not_found}
-          event -> {:ok, RecordedEvent.new(event)}
-        end
       end
     end
   end
