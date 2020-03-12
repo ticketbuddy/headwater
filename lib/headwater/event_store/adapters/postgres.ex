@@ -84,14 +84,6 @@ defmodule Headwater.EventStore.Adapters.Postgres do
         |> HeadwaterEventBusSchema.changeset()
         |> @repo.insert()
       end
-
-      # def get_event(event_ref) do
-      #   @repo.get_by(HeadwaterEventsSchema, event_ref: event_ref)
-      #   |> case do
-      #     nil -> {:error, :event_not_found}
-      #     event -> {:ok, RecordedEvent.new(event)}
-      #   end
-      # end
     end
   end
 end
