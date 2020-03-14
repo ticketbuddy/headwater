@@ -18,4 +18,5 @@ defmodule Headwater.EventStore do
   @callback load_events_for_aggregate(aggregate_id) :: {:ok, [recorded_event]}
   @callback event_handled(listener_id: listener_id, event_number: event_number) :: :ok
   @callback get_event(event_id) :: {:ok, recorded_event}
+  @callback get_bus_next_event_number(listener_id, from_event_number) :: event_number
 end
