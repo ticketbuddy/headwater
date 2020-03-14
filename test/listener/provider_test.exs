@@ -29,6 +29,25 @@ defmodule Headwater.Listener.ProviderTest do
     }
   end
 
+  describe "start_link/1" do
+    test "fetches latest event_number on startup" do
+      bus_id = :"a-big-sparkly-red-bus"
+
+      opts = %{
+        event_store: FakeApp.EventStoreMock,
+        bus_id: bus_id,
+        from_event_ref: 0
+      }
+
+      FakeApp.EventStoreMock
+      |> expect(:get_bus_next_event_number, fn ^bus_id, 0 ->
+        78
+      end)
+
+      assert {:ok, _pid} = Headwater.Listener.Provider.start_link(opts)
+    end
+  end
+
   describe "handle_demand/2" do
     test "when pending demand does NOT reach zero", %{recorded_events: recorded_events} do
       latest_event_ref = 3
