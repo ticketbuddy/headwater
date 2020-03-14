@@ -29,6 +29,49 @@ defmodule Headwater.Listener.ProviderTest do
     }
   end
 
+  describe "handle_demand/2" do
+    test "when pending demand does NOT reach zero", %{recorded_events: recorded_events} do
+      latest_event_ref = 3
+      queue = :queue.new()
+      queue = :queue.in(recorded_events.one, queue)
+      queue = :queue.in(recorded_events.two, queue)
+      state = {queue, _pending_demand = 1, latest_event_ref}
+
+      opts = %{
+        event_store: FakeApp.EventStoreMock,
+        bus_id: "a-big-sparkly-red-bus",
+        from_event_ref: 0
+      }
+
+      expected_state =
+        {_expected_queue = {[], []}, _pending_demand = 499, _expected_next_event_number = 3}
+
+      assert {:noreply, [recorded_events.one, recorded_events.two], {expected_state, opts}} ==
+               Headwater.Listener.Provider.handle_demand(_demand = 500, {state, opts})
+    end
+
+    test "when pending demand does reach zero", %{recorded_events: recorded_events} do
+      latest_event_ref = 3
+      queue = :queue.new()
+      queue = :queue.in(recorded_events.one, queue)
+      queue = :queue.in(recorded_events.two, queue)
+      state = {queue, _pending_demand = 0, latest_event_ref}
+
+      opts = %{
+        event_store: FakeApp.EventStoreMock,
+        bus_id: "a-big-sparkly-red-bus",
+        from_event_ref: 0
+      }
+
+      expected_state =
+        {_expected_queue = {[], [recorded_events.two]}, _pending_demand = 0,
+         _expected_next_event_number = 3}
+
+      assert {:noreply, [recorded_events.one], {expected_state, opts}} ==
+               Headwater.Listener.Provider.handle_demand(_demand = 1, {state, opts})
+    end
+  end
+
   describe "checking for recorded events" do
     test "when pending demand does reach zero", %{recorded_events: recorded_events} do
       latest_event_ref = 3
