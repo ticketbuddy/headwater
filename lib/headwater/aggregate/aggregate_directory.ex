@@ -37,13 +37,10 @@ defmodule Headwater.AggregateDirectory do
     event_store = Keyword.get(opts, :event_store)
     supervisor = Keyword.get(opts, :supervisor)
 
-    listeners = List.wrap(Keyword.get(opts, :listeners, []))
-
     quote do
       @registry unquote(registry)
       @supervisor unquote(supervisor)
       @event_store unquote(event_store)
-      @listeners unquote(listeners)
 
       use Headwater.Aggregate.Expand, aggregate_directory: __MODULE__
 

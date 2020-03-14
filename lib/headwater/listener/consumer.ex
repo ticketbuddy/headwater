@@ -12,7 +12,7 @@ defmodule Headwater.Listener.Consumer do
   end
 
   @impl true
-  def init(%{provider: provider} = _state) do
+  def init(%{provider: provider} = state) do
     {:consumer, state, subscribe_to: [provider]}
   end
 
