@@ -36,11 +36,13 @@ defmodule Headwater.AggregateDirectory do
     registry = Keyword.get(opts, :registry)
     event_store = Keyword.get(opts, :event_store)
     supervisor = Keyword.get(opts, :supervisor)
+    listener = Keyword.get(opts, :listener)
 
     quote do
       @registry unquote(registry)
       @supervisor unquote(supervisor)
       @event_store unquote(event_store)
+      @listener unquote(listener)
 
       use Headwater.Aggregate.Expand, aggregate_directory: __MODULE__
 
@@ -56,6 +58,7 @@ defmodule Headwater.AggregateDirectory do
         |> ensure_started()
         |> Headwater.Aggregate.AggregateWorker.propose_wish(request)
         |> Headwater.AggregateDirectory.Result.new()
+        |> notify_event_bus_listeners()
       end
 
       def read_state(request = %ReadRequest{}) do
@@ -76,6 +79,14 @@ defmodule Headwater.AggregateDirectory do
         Headwater.Aggregate.AggregateWorker.new(aggregate_config)
 
         aggregate_config
+      end
+
+      def notify_event_bus_listeners(result) when is_nil(@listener), do: result
+
+      def notify_event_bus_listeners(result) do
+        @listener.broadcast_check_for_recorded_events()
+
+        result
       end
     end
   end

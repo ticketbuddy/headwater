@@ -13,14 +13,14 @@ defmodule Headwater.Listener.Consumer do
 
   @impl true
   def init(%{bus_id: bus_id} = state) do
-    {:consumer, state, subscribe_to: [:"provider_#{bus_id}"]}
+    provider_pid_name = Headwater.Listener.Provider.provider_pid_name(bus_id)
+    {:consumer, state, subscribe_to: [provider_pid_name]}
   end
 
   @impl true
   def handle_events(recorded_events, _from, state) do
     %{handlers: handlers, event_store: event_store, bus_id: bus_id} = state
 
-    # TODO for each recorded event, call all callbacks
     recorded_events
     |> EventHandler.build_callbacks(handlers)
     |> EventHandler.callbacks(state)
