@@ -21,18 +21,17 @@ defmodule Headwater.Listener.Consumer do
     %{handlers: handlers, event_store: event_store, bus_id: bus_id} = state
 
     # TODO for each recorded event, call all callbacks
-    # recorded_events
-    # |> EventHandler.build_handlers(handlers)
-    # |> EventHandler.callbacks()
-    # |> EventHandler.mark_as_completed(event_store, bus_id, event_ref)
-    # |> case do
-    #   :ok ->
-    #     {:noreply, [], state}
-    #
-    #   {:error, :callback_errors} ->
-    #     # TODO handle this better...
-    #     raise "Callback had errors"
-    # end
+    recorded_events
+    |> EventHandler.build_callbacks(handlers)
+    |> EventHandler.callbacks(bus_id)
+    |> case do
+      :ok ->
+        {:noreply, [], state}
+
+      {:error, :callback_errors} ->
+        # TODO handle this better...
+        raise "Callback had errors"
+    end
 
     {:noreply, [], state}
   end

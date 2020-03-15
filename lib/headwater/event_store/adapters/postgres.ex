@@ -73,9 +73,9 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       end
 
       @impl Headwater.EventStore
-      def bus_has_completed_event_ref(
+      def bus_has_completed_event_number(
             bus_id: bus_id,
-            event_ref: event_ref
+            event_number: event_ref
           ) do
         %{
           bus_id: bus_id,
