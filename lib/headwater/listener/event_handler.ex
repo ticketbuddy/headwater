@@ -34,7 +34,7 @@ defmodule Headwater.Listener.EventHandler do
       true ->
         event_store.bus_has_completed_event_number(
           bus_id: bus_id,
-          event_ref: recorded_event.event_number
+          event_number: recorded_event.event_number
         )
 
         :ok

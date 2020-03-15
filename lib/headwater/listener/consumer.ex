@@ -8,12 +8,12 @@ defmodule Headwater.Listener.Consumer do
   alias Headwater.Listener.EventHandler
 
   def start_link(opts) do
-    GenStage.start_link(__MODULE__, opts, name: opts.bus_id)
+    GenStage.start_link(__MODULE__, opts, name: :"consumer_#{opts.bus_id}")
   end
 
   @impl true
-  def init(%{provider: provider} = state) do
-    {:consumer, state, subscribe_to: [provider]}
+  def init(%{bus_id: bus_id} = state) do
+    {:consumer, state, subscribe_to: [:"provider_#{bus_id}"]}
   end
 
   @impl true
@@ -23,7 +23,7 @@ defmodule Headwater.Listener.Consumer do
     # TODO for each recorded event, call all callbacks
     recorded_events
     |> EventHandler.build_callbacks(handlers)
-    |> EventHandler.callbacks(bus_id)
+    |> EventHandler.callbacks(state)
     |> case do
       :ok ->
         {:noreply, [], state}

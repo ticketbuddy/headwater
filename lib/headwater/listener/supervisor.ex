@@ -27,6 +27,13 @@ defmodule Headwater.Listener.Supervisor do
         children = @busses |> Enum.flat_map(&bus_process_description/1)
       end
 
+      def broadcast_check_for_recorded_events() do
+        @busses
+        |> Enum.each(fn {bus_id, _handlers} ->
+          Headwater.Listener.Provider.check_for_recorded_events(bus_id)
+        end)
+      end
+
       defp bus_process_description({bus_id, handlers}) do
         [
           {Headwater.Listener.Provider, provider_opts(bus_id)},

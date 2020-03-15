@@ -7,6 +7,15 @@ defmodule Example do
   defread(:read_reducer, to: Example.Reducer)
 end
 
+defmodule ExampleListener do
+  use Headwater.Listener.Supervisor,
+    from_event_ref: 0,
+    event_store: Example.EventStore,
+    busses: [
+      {"first_bus", [Example.Printer]}
+    ]
+end
+
 # defmodule ExampleListener do
 #   use Headwater.Listener,
 #     from_event_ref: 0,

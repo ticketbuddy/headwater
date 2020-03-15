@@ -9,7 +9,7 @@ defmodule Headwater.Listener.Provider do
 
     Logger.log(:info, "#{bus_id} continuing from event ref: #{read_from}")
 
-    GenStage.start_link(__MODULE__, init_state, name: bus_id)
+    GenStage.start_link(__MODULE__, init_state, name: provider_pid_name(bus_id))
   end
 
   # Callbacks
@@ -19,10 +19,16 @@ defmodule Headwater.Listener.Provider do
     {:producer, state, dispatcher: GenStage.BroadcastDispatcher}
   end
 
-  def check_for_recorded_events() do
-    send(__MODULE__, :check_for_recorded_events)
+  def check_for_recorded_events(bus_id) do
+    bus_id
+    |> provider_pid_name()
+    |> send(:check_for_recorded_events)
 
     :ok
+  end
+
+  def provider_pid_name(bus_id) do
+    :"provider_#{bus_id}"
   end
 
   @impl true
@@ -30,8 +36,10 @@ defmodule Headwater.Listener.Provider do
     {queue, pending_demand, latest_event_ref} = state
     %{event_store: event_store, bus_id: bus_id} = opts
 
+    {:ok, recorded_event_stream} = event_store.load_events(latest_event_ref)
+
     {queue, recorded_event_count} =
-      event_store.load_events(latest_event_ref)
+      recorded_event_stream
       |> Enum.reduce({queue, 0}, fn recorded_event, {queue, counter} ->
         queue = :queue.in(recorded_event, queue)
 

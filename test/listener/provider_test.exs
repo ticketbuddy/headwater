@@ -104,10 +104,11 @@ defmodule Headwater.Listener.ProviderTest do
 
       FakeApp.EventStoreMock
       |> expect(:load_events, fn ^latest_event_ref ->
-        [
-          recorded_events.one,
-          recorded_events.two
-        ]
+        {:ok,
+         [
+           recorded_events.one,
+           recorded_events.two
+         ]}
       end)
 
       expected_state =
@@ -132,10 +133,11 @@ defmodule Headwater.Listener.ProviderTest do
 
       FakeApp.EventStoreMock
       |> expect(:load_events, fn ^latest_event_ref ->
-        [
-          recorded_events.one,
-          recorded_events.two
-        ]
+        {:ok,
+         [
+           recorded_events.one,
+           recorded_events.two
+         ]}
       end)
 
       expected_state =
