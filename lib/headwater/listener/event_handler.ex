@@ -4,18 +4,17 @@ defmodule Headwater.Listener.EventHandler do
   @callback listener_prefix() :: String.t()
   @callback handle_event(any(), notes) :: {:ok, any()} | :ok
 
-  def fetch_event(event_ref, event_store) do
-    {:ok, event} = event_store.get_event(event_ref)
-
-    event
-  end
-
   def build_callbacks(recorded_events, handlers) do
     Enum.map(recorded_events, &{&1, handlers})
   end
 
   def callbacks(callbacks, opts) do
-    Enum.map(callbacks, &execute_callback(&1, opts))
+    Enum.reduce_while(callbacks, :ok, fn callback, result ->
+      case execute_callback(callback, opts) do
+        :ok -> {:cont, :ok}
+        {:error, :callback_errors} -> {:halt, {:error, :callback_errors}}
+      end
+    end)
   end
 
   defp execute_callback({recorded_event, handlers}, opts) do
