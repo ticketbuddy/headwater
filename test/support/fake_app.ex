@@ -13,19 +13,20 @@ defmodule FakeApp do
 end
 
 defmodule FakeAppListener do
-  use Headwater.Listener,
+  use Headwater.Listener.Supervisor,
     from_event_ref: 0,
     event_store: FakeApp.EventStoreMock,
-    bus_id: "fake_app_bus_consumer",
-    handlers: [FakeApp.PrinterMock]
+    busses: [
+      {"fake_app_bus_consumer", [FakeApp.PrinterMock]},
+      {"bus_two", []}
+    ]
 end
 
 defmodule FakeApp.Headwater.AggregateDirectory do
   use Headwater.AggregateDirectory,
     registry: FakeApp.Registry,
     supervisor: FakeApp.AggregateSupervisor,
-    event_store: FakeApp.EventStoreMock,
-    listeners: Headwater.ListenerMock
+    event_store: FakeApp.EventStoreMock
 end
 
 defmodule FakeApp.Router do

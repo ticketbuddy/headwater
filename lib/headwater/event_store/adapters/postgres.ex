@@ -63,7 +63,7 @@ defmodule Headwater.EventStore.Adapters.Postgres do
         {:ok, deserialized_events}
       end
 
-      def get_next_event_ref(bus_id, base_event_ref) do
+      def get_bus_next_event_number(bus_id, base_event_ref) do
         Query.event_bus_next_event_number(bus_id)
         |> @repo.one()
         |> case do
@@ -73,9 +73,9 @@ defmodule Headwater.EventStore.Adapters.Postgres do
       end
 
       @impl Headwater.EventStore
-      def bus_has_completed_event_ref(
+      def bus_has_completed_event_number(
             bus_id: bus_id,
-            event_ref: event_ref
+            event_number: event_ref
           ) do
         %{
           bus_id: bus_id,

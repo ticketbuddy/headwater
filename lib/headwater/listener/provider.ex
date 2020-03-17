@@ -1,87 +1,80 @@
 defmodule Headwater.Listener.Provider do
-  defmacro __using__(
-             from_event_ref: from_event_ref,
-             event_store: event_store,
-             bus_id: bus_id
-           ) do
-    quote do
-      use GenStage
-      require Logger
-      @from_event_ref unquote(from_event_ref)
-      @event_store unquote(event_store)
-      @bus_id unquote(bus_id)
+  use GenStage
+  require Logger
 
-      def start_link(_) do
-        read_from = @event_store.get_next_event_ref(@bus_id, @from_event_ref)
-        init_state = {:queue.new(), 0, read_from}
+  def start_link(opts) do
+    %{bus_id: bus_id, from_event_ref: from_event_ref, event_store: event_store} = opts
+    read_from = event_store.get_bus_next_event_number(bus_id, from_event_ref)
+    init_state = {{:queue.new(), 0, read_from}, opts}
 
-        Logger.log(:info, "#{@bus_id} continuing from event ref: #{read_from}")
+    Logger.log(:info, "#{bus_id} continuing from event ref: #{read_from}")
 
-        GenStage.start_link(__MODULE__, init_state, name: __MODULE__)
-      end
+    GenStage.start_link(__MODULE__, init_state, name: provider_pid_name(bus_id))
+  end
 
-      # Callbacks
+  # Callbacks
 
-      @impl true
-      def init(state) do
-        {:producer, state, dispatcher: GenStage.BroadcastDispatcher}
-      end
+  @impl true
+  def init(state) do
+    {:producer, state, dispatcher: GenStage.BroadcastDispatcher}
+  end
 
-      def bus_id, do: @bus_id
+  def check_for_recorded_events(bus_id) do
+    bus_id
+    |> provider_pid_name()
+    |> send(:check_for_recorded_events)
 
-      def process_event(event_ref) do
-        send(__MODULE__, {:new_event_ref, event_ref})
+    :ok
+  end
 
-        :ok
-      end
+  def provider_pid_name(bus_id) do
+    :"provider_#{bus_id}"
+  end
 
-      @impl true
-      def handle_info({:new_event_ref, event_ref}, state) do
-        {queue, pending_demand, latest_event_ref} = state
-        expected_next_event_ref = latest_event_ref + 1
+  @impl true
+  def handle_info(:check_for_recorded_events, {state, opts}) do
+    {queue, pending_demand, latest_event_ref} = state
+    %{event_store: event_store, bus_id: bus_id} = opts
 
-        Logger.log(
-          :info,
-          "#{@bus_id} received event ref, currently: #{latest_event_ref}, requested: #{event_ref}"
+    {:ok, recorded_event_stream} = event_store.load_events(latest_event_ref)
+
+    {queue, recorded_event_count} =
+      recorded_event_stream
+      |> Enum.reduce({queue, 0}, fn recorded_event, {queue, counter} ->
+        queue = :queue.in(recorded_event, queue)
+
+        {queue, counter + 1}
+      end)
+
+    flush_events({queue, pending_demand, latest_event_ref + recorded_event_count}, [], opts)
+  end
+
+  def handle_demand(demand, {state, opts}) do
+    {queue, pending_demand, latest_event_ref} = state
+    flush_events({queue, pending_demand + demand, latest_event_ref}, [], opts)
+  end
+
+  defp flush_events(
+         state = {_queue, pending_demand = 0, _latest_event_ref},
+         events_to_flush,
+         opts
+       ) do
+    {:noreply, Enum.reverse(events_to_flush), {state, opts}}
+  end
+
+  defp flush_events(state, events_to_flush, opts) do
+    {queue, pending_demand, latest_event_ref} = state
+
+    case :queue.out(queue) do
+      {{:value, event}, queue} ->
+        flush_events(
+          {queue, pending_demand - 1, latest_event_ref},
+          [event | events_to_flush],
+          opts
         )
 
-        cond do
-          event_ref >= expected_next_event_ref ->
-            queue = add_missed_event_refs_to_queue(queue, expected_next_event_ref, event_ref)
-            flush_events({queue, pending_demand, event_ref}, [])
-
-          event_ref < expected_next_event_ref ->
-            Logger.log(:warn, "Event already processed")
-            {:noreply, [], state}
-        end
-      end
-
-      def handle_demand(demand, {queue, pending_demand, latest_event_ref}) do
-        flush_events({queue, pending_demand + demand, latest_event_ref}, [])
-      end
-
-      defp add_missed_event_refs_to_queue(queue, expected_next_event_ref, requested_event_ref) do
-        expected_next_event_ref..requested_event_ref
-        |> Enum.reduce(queue, fn event_ref_to_add, queue ->
-          :queue.in(event_ref_to_add, queue)
-        end)
-      end
-
-      defp flush_events(state = {_queue, pending_demand = 0, _latest_event_ref}, events_to_flush) do
-        {:noreply, Enum.reverse(events_to_flush), state}
-      end
-
-      defp flush_events(state, events_to_flush) do
-        {queue, pending_demand, latest_event_ref} = state
-
-        case :queue.out(queue) do
-          {{:value, event}, queue} ->
-            flush_events({queue, pending_demand - 1, latest_event_ref}, [event | events_to_flush])
-
-          {:empty, queue} ->
-            {:noreply, Enum.reverse(events_to_flush), state}
-        end
-      end
+      {:empty, queue} ->
+        {:noreply, Enum.reverse(events_to_flush), {state, opts}}
     end
   end
 end
