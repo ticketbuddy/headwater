@@ -20,6 +20,8 @@ defmodule Headwater.Listener.Provider do
   end
 
   def check_for_recorded_events(bus_id) do
+    Logger.info(fn -> "Listener checking for recorded events for bus #{bus_id}." end)
+
     bus_id
     |> provider_pid_name()
     |> send(:check_for_recorded_events)

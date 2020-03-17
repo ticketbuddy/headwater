@@ -20,6 +20,8 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
       @impl Headwater.EventStore
       def commit(persist_events) do
+        Logger.info(fn -> "Commiting #{Enum.count(persist_events)} recorded events." end)
+
         Commit.start()
         |> Commit.add_inserts(persist_events)
         |> @repo.transaction()
@@ -28,6 +30,8 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
       @impl Headwater.EventStore
       def load_events(starting_event_number \\ 0) do
+        Logger.info(fn -> "Loading events from #{starting_event_number}." end)
+
         recorded_events_stream =
           ReadStream.read(
             fn next_event_number ->
@@ -42,6 +46,10 @@ defmodule Headwater.EventStore.Adapters.Postgres do
 
       @impl Headwater.EventStore
       def load_events_for_aggregate(aggregate_id, starting_event_number \\ 0) do
+        Logger.info(fn ->
+          "Loading events for aggregate #{aggregate_id} from #{starting_event_number}."
+        end)
+
         recorded_events_stream =
           ReadStream.read(
             fn next_event_number ->
@@ -67,8 +75,14 @@ defmodule Headwater.EventStore.Adapters.Postgres do
         Query.event_bus_next_event_number(bus_id)
         |> @repo.one()
         |> case do
-          nil -> base_event_ref
-          event -> Map.get(event, :event_ref)
+          nil ->
+            Logger.info("Using base event ref #{base_event_ref} for bus #{bus_id}.")
+
+            base_event_ref
+
+          event ->
+            Logger.info("Continuing from event_number #{event.event_ref} for bus #{bus_id}.")
+            Map.get(event, :event_ref)
         end
       end
 
@@ -77,6 +91,8 @@ defmodule Headwater.EventStore.Adapters.Postgres do
             bus_id: bus_id,
             event_number: event_ref
           ) do
+        Logger.info("Recording listener #{bus_id} has completed event_number #{event_ref}.")
+
         %{
           bus_id: bus_id,
           event_ref: event_ref

@@ -13,9 +13,12 @@ defmodule Headwater.Aggregate.Idempotency do
   build the aggregate's state. Therefore, we can also rely on all the
   `idempotency_key`s being loaded into ets for that aggregate.
   """
+  require Logger
   alias Headwater.Aggregate.AggregateConfig
 
   def store(aggregate_config = %AggregateConfig{}, idempotency_key) do
+    Logger.info("Recording idempotency key #{idempotency_key}.")
+
     aggregate_config
     |> ensure_started()
     |> table_name()
@@ -30,8 +33,13 @@ defmodule Headwater.Aggregate.Idempotency do
     |> table_name()
     |> :ets.lookup(idempotency_key)
     |> case do
-      [] -> {:ok, :idempotency_key_available}
-      [{^idempotency_key}] -> {:error, :idempotency_key_used}
+      [] ->
+        Logger.info("Idempotency key #{idempotency_key} not used.")
+        {:ok, :idempotency_key_available}
+
+      [{^idempotency_key}] ->
+        Logger.info("Idempotency key #{idempotency_key} used.")
+        {:error, :idempotency_key_used}
     end
   end
 

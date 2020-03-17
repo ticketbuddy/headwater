@@ -57,6 +57,12 @@ defmodule Headwater.Aggregate.AggregateWorker do
 
     {:ok, aggregate_config} = NextState.process(aggregate, Enum.to_list(recorded_events))
 
+    Logger.info(fn ->
+      "Loaded #{Enum.count(recorded_events)} recorded events for #{aggregate.id}. Aggregate number now #{
+        aggregate_config.aggregate_number
+      }."
+    end)
+
     {:reply, :ok, aggregate_config}
   end
 
@@ -94,15 +100,22 @@ defmodule Headwater.Aggregate.AggregateWorker do
          {:ok, recorded_events} <- aggregate_config.event_store.commit(persist_events),
          {:ok, aggregate_config} <-
            NextState.process(aggregate_config, recorded_events) do
+      Logger.info(
+        "New event recorded. aggregate_number is now #{aggregate_config.aggregate_number}."
+      )
+
       {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}
     else
       {:error, :idempotency_key_used} ->
+        Logger.warn("Idempotency key already used for wish.")
         {:reply, {:ok, aggregate_config.aggregate_state}, state}
 
       error = {:error, :execute, _} ->
+        Logger.error("Error execute wish; #{inspect(error)}")
         {:reply, error, state}
 
       error = {:error, :next_state, _} ->
+        Logger.error("Error next_state wish; #{inspect(error)}")
         {:reply, error, state}
     end
   end

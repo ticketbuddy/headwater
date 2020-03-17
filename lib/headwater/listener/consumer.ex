@@ -21,6 +21,10 @@ defmodule Headwater.Listener.Consumer do
   def handle_events(recorded_events, _from, state) do
     %{handlers: handlers, event_store: event_store, bus_id: bus_id} = state
 
+    Logger.info(fn ->
+      "Listener running callbacks for #{Enum.count(recorded_events)} recorded events."
+    end)
+
     recorded_events
     |> EventHandler.build_callbacks(handlers)
     |> EventHandler.callbacks(state)

@@ -1,4 +1,5 @@
 defmodule Headwater.AggregateDirectory do
+  require Logger
   alias Headwater.Aggregate.AggregateConfig
 
   @callback handle(WriteRequest.t()) :: {:ok, Result.t()}
@@ -39,6 +40,8 @@ defmodule Headwater.AggregateDirectory do
     listener = Keyword.get(opts, :listener)
 
     quote do
+      require Logger
+
       @registry unquote(registry)
       @supervisor unquote(supervisor)
       @event_store unquote(event_store)
@@ -76,6 +79,7 @@ defmodule Headwater.AggregateDirectory do
       end
 
       defp ensure_started(aggregate_config) do
+        Logger.info("Ensuring #{aggregate_config.id} started.")
         Headwater.Aggregate.AggregateWorker.new(aggregate_config)
 
         aggregate_config

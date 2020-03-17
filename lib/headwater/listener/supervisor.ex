@@ -12,6 +12,7 @@ defmodule Headwater.Listener.Supervisor do
            ) do
     quote do
       use Supervisor
+      require Logger
       @busses unquote(busses)
 
       def start_link(init_arg) do
@@ -28,6 +29,8 @@ defmodule Headwater.Listener.Supervisor do
       end
 
       def broadcast_check_for_recorded_events() do
+        Logger.info(fn -> "Asking all listeners to check for recorded events." end)
+
         @busses
         |> Enum.each(fn {bus_id, _handlers} ->
           Headwater.Listener.Provider.check_for_recorded_events(bus_id)
