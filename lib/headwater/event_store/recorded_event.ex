@@ -23,8 +23,6 @@ defmodule Headwater.EventStore.RecordedEvent do
     :created_at,
     :idempotency_key
   ]
-
-  @derive {Jason.Encoder, only: @enforce_keys}
   defstruct @enforce_keys
 
   @type uuid :: String.t()
