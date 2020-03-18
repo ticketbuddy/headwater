@@ -25,6 +25,8 @@ defmodule Headwater.EventStore.RecordedEvent do
   ]
   defstruct @enforce_keys
 
+  @derive {Jason.Encoder, only: @enforce_keys}
+
   @type uuid :: String.t()
 
   alias Headwater.EventStore.Adapters.Postgres.HeadwaterEventsSchema

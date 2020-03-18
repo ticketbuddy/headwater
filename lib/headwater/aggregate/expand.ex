@@ -49,7 +49,7 @@ defmodule Headwater.Aggregate.Expand do
             {:warn, {:empty_aggregate, result}} -> result
           end
 
-        expand(output.state, mapping, next_keys)
+        expand(output, mapping, next_keys)
       end
     end
   end
