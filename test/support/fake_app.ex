@@ -44,6 +44,6 @@ defmodule FakeApp.Router do
   """
   use Headwater.Aggregate.Router, aggregate_directory: Headwater.TestSupport.AggregateDirectory
 
-  defaction(FakeApp.ScorePoint, to: FakeApp, by_key: :game_id)
+  defaction([FakeApp.ScorePoint, FakeApp.ScoreTwoPoints], to: FakeApp, by_key: :game_id)
   defread(:get_score, to: FakeApp)
 end

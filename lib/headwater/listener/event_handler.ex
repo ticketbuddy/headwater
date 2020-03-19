@@ -59,6 +59,17 @@ defmodule Headwater.Listener.EventHandler do
 
     result = handler.handle_event(recorded_event.data, notes)
 
+    case result do
+      {:submit, {wish_router, wish_or_wishes}} ->
+        result = List.wrap(wish_or_wishes) |> Enum.map(&wish_router.handle/1)
+        handler_result(result, handler, recorded_event)
+
+      result ->
+        handler_result(result, handler, recorded_event)
+    end
+  end
+
+  defp handler_result(result, handler, recorded_event) do
     {Headwater.Success.success?(result), result}
     |> case do
       {true, _result} ->
