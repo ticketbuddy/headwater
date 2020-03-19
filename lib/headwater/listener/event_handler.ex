@@ -1,4 +1,6 @@
 defmodule Headwater.Listener.EventHandler do
+  import Logger
+
   @type notes :: %{idempotency_key: String.t()}
 
   @callback listener_prefix() :: String.t()
@@ -21,15 +23,8 @@ defmodule Headwater.Listener.EventHandler do
     %{event_store: event_store, bus_id: bus_id} = opts
 
     handlers
-    |> Enum.map(fn handler ->
-      notes = event_notes(handler, recorded_event)
-      handler.handle_event(recorded_event.data, notes)
-    end)
-    |> Enum.all?(fn
-      {:ok, _result} -> true
-      :ok -> true
-      _error -> false
-    end)
+    |> Enum.map(&call_handler(&1, recorded_event))
+    |> Enum.all?()
     |> case do
       true ->
         event_store.bus_has_completed_event_number(
@@ -57,5 +52,29 @@ defmodule Headwater.Listener.EventHandler do
   defp build_causation_idempotency_key(handler, event) do
     (handler.listener_prefix() <> Integer.to_string(event.event_number) <> event.aggregate_id)
     |> Headwater.web_safe_md5()
+  end
+
+  defp call_handler(handler, recorded_event) do
+    notes = event_notes(handler, recorded_event)
+
+    result = handler.handle_event(recorded_event.data, notes)
+
+    {Headwater.Success.success?(result), result}
+    |> case do
+      {true, _result} ->
+        true
+
+      {false, error} ->
+        Logger.error(
+          inspect(%{
+            msg: "Listener callback failed.",
+            handler: Atom.to_string(handler),
+            recorded_event: recorded_event,
+            error: error
+          })
+        )
+
+        false
+    end
   end
 end

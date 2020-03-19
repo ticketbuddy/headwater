@@ -7,5 +7,5 @@ defmodule Headwater do
     :crypto.hash(:md5, content) |> Base.encode16()
   end
 
-  defdelegate wish_successful?(wish_results), to: Headwater.WishSuccess, as: :success?
+  defdelegate wish_successful?(wish_results), to: Headwater.Success, as: :success?
 end
