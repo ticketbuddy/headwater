@@ -1,4 +1,9 @@
 defmodule Headwater.Success do
+  @moduledoc """
+  Decides what a successful result is from listener
+  event_handler callbacks as well as wishes.
+  """
+
   def success?(results) when is_list(results) do
     Enum.all?(results, &success?/1)
   end
