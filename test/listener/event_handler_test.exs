@@ -83,5 +83,53 @@ defmodule Headwater.Listener.EventHandlerTest do
 
       assert {:error, :callback_errors} == EventHandler.callbacks(callbacks, opts)
     end
+
+    test "when callback returns a wish to be submitted", %{recorded_events: recorded_events} do
+      FakeApp.PrinterMock
+      |> expect(:listener_prefix, fn -> "yellow_bus_" end)
+
+      FakeApp.PrinterMock
+      |> expect(:handle_event, fn _recorded_event, _notes ->
+        {:submit, {FakeApp.Router, %FakeApp.ScorePoint{}}}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:bus_has_completed_event_number, 1, fn _opts ->
+        :ok
+      end)
+
+      handlers = [FakeApp.PrinterMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus"}
+      recorded_events = [recorded_events.one]
+
+      callbacks = EventHandler.build_callbacks(recorded_events, handlers)
+
+      assert :ok == EventHandler.callbacks(callbacks, opts)
+    end
+
+    test "when a callback returns a list of wishes to be submitted", %{
+      recorded_events: recorded_events
+    } do
+      FakeApp.PrinterMock
+      |> expect(:listener_prefix, fn -> "yellow_bus_" end)
+
+      FakeApp.PrinterMock
+      |> expect(:handle_event, fn _recorded_event, _notes ->
+        {:submit, {FakeApp.Router, [%FakeApp.ScorePoint{}, %FakeApp.ScoreTwoPoints{}]}}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:bus_has_completed_event_number, 1, fn _opts ->
+        :ok
+      end)
+
+      handlers = [FakeApp.PrinterMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus"}
+      recorded_events = [recorded_events.one]
+
+      callbacks = EventHandler.build_callbacks(recorded_events, handlers)
+
+      assert :ok == EventHandler.callbacks(callbacks, opts)
+    end
   end
 end
