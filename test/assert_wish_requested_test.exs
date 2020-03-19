@@ -10,7 +10,7 @@ defmodule Headwater.TestSupport.AggregateDirectoryTest do
     ]
 
   test "can assert that a wish has been submitted" do
-    FakeApp.Router.score(%FakeApp.ScorePoint{})
+    FakeApp.Router.handle(%FakeApp.ScorePoint{})
 
     assert_wish_requested(%Headwater.AggregateDirectory.WriteRequest{
       aggregate_id: "game-one",
@@ -37,17 +37,17 @@ defmodule Headwater.TestSupport.AggregateDirectoryTest do
     assert is_nil(Process.get(:_headwater_read_state_result))
 
     # goes back to default
-    assert {:ok, "aggregate state stubbed"} == FakeApp.Router.score(%FakeApp.ScorePoint{})
+    assert {:ok, "aggregate state stubbed"} == FakeApp.Router.handle(%FakeApp.ScorePoint{})
   end
 
   test "can stub the result (action)" do
     set_handle_result({:error, :a_reason})
-    assert {:error, :a_reason} == FakeApp.Router.score(%FakeApp.ScorePoint{})
+    assert {:error, :a_reason} == FakeApp.Router.handle(%FakeApp.ScorePoint{})
 
     # clears the return value
     assert is_nil(Process.get(:_headwater_handle_result))
 
     # goes back to default
-    assert {:ok, "aggregate state stubbed"} == FakeApp.Router.score(%FakeApp.ScorePoint{})
+    assert {:ok, "aggregate state stubbed"} == FakeApp.Router.handle(%FakeApp.ScorePoint{})
   end
 end

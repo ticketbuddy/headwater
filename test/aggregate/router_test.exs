@@ -8,8 +8,24 @@ defmodule Headwater.Aggregate.RouterTest do
   defmodule FakeRouter do
     use Headwater.Aggregate.Router, aggregate_directory: Headwater.AggregateMock
 
-    defaction(:score, to: FakeApp, by_key: :game_id)
+    defaction(FakeApp.ScorePoint, to: FakeApp, by_key: :game_id)
+    defaction([FakeApp.ScoreTwoPoints], to: FakeApp, by_key: :game_id)
+
     defread(:read_points, to: FakeApp)
+  end
+
+  test "handles an action specified in a list" do
+    Headwater.AggregateMock
+    |> expect(:handle, fn %Headwater.AggregateDirectory.WriteRequest{
+                            handler: FakeApp,
+                            idempotency_key: _a_random_value,
+                            aggregate_id: "game-one",
+                            wish: %FakeApp.ScoreTwoPoints{game_id: "game-one", value: 2}
+                          } ->
+      {:ok, %FakeApp{}}
+    end)
+
+    assert {:ok, %FakeApp{}} == FakeRouter.handle(%FakeApp.ScoreTwoPoints{})
   end
 
   test "handles an action" do
@@ -23,7 +39,7 @@ defmodule Headwater.Aggregate.RouterTest do
       {:ok, %FakeApp{}}
     end)
 
-    assert {:ok, %FakeApp{}} == FakeRouter.score(%FakeApp.ScorePoint{})
+    assert {:ok, %FakeApp{}} == FakeRouter.handle(%FakeApp.ScorePoint{})
   end
 
   test "uses the provided idempotency_key" do
@@ -35,7 +51,7 @@ defmodule Headwater.Aggregate.RouterTest do
     end)
 
     assert {:ok, %FakeApp{}} ==
-             FakeRouter.score(%FakeApp.ScorePoint{}, idempotency_key: "idem-po-54321")
+             FakeRouter.handle(%FakeApp.ScorePoint{}, idempotency_key: "idem-po-54321")
   end
 
   test "retrieves the current state" do

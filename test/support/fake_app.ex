@@ -3,12 +3,20 @@ defmodule FakeApp do
 
   defstruct total: 0, game_id: "game-one"
 
+  defmodule ScoreTwoPoints do
+    defstruct value: 2, game_id: "game-one"
+  end
+
   defmodule ScorePoint do
     defstruct value: 1, game_id: "game-one"
   end
 
   defmodule PointScored do
     defstruct value: 1, game_id: "game-one"
+  end
+
+  defmodule TwoPointScored do
+    defstruct value: 2, game_id: "game-one"
   end
 end
 
@@ -36,6 +44,6 @@ defmodule FakeApp.Router do
   """
   use Headwater.Aggregate.Router, aggregate_directory: Headwater.TestSupport.AggregateDirectory
 
-  defaction(:score, to: FakeApp, by_key: :game_id)
+  defaction(FakeApp.ScorePoint, to: FakeApp, by_key: :game_id)
   defread(:get_score, to: FakeApp)
 end

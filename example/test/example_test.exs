@@ -4,7 +4,7 @@ defmodule ExampleTest do
 
   test "increments a counter and returns the state in an :ok tuple" do
     assert {:ok, %Example.Counter{total: 5}} ==
-             Example.inc(%Example.Increment{counter_id: "abc", increment_by: 5})
+             Example.handle(%Example.Increment{counter_id: "abc", increment_by: 5})
   end
 
   test "idempotent requests return same state" do
@@ -12,17 +12,17 @@ defmodule ExampleTest do
     expected_state = %Example.Counter{total: 5}
 
     assert {:ok, expected_state} ==
-             Example.inc(%Example.Increment{counter_id: "idempo-counter", increment_by: 5},
+             Example.handle(%Example.Increment{counter_id: "idempo-counter", increment_by: 5},
                idempotency_key: idempotency
              )
 
     assert {:ok, expected_state} ==
-             Example.inc(%Example.Increment{counter_id: "idempo-counter", increment_by: 5},
+             Example.handle(%Example.Increment{counter_id: "idempo-counter", increment_by: 5},
                idempotency_key: idempotency
              )
 
     assert {:ok, expected_state} ==
-             Example.inc(%Example.Increment{counter_id: "idempo-counter", increment_by: 5},
+             Example.handle(%Example.Increment{counter_id: "idempo-counter", increment_by: 5},
                idempotency_key: idempotency
              )
   end

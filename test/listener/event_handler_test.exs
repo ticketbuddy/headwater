@@ -83,5 +83,9 @@ defmodule Headwater.Listener.EventHandlerTest do
 
       assert {:error, :callback_errors} == EventHandler.callbacks(callbacks, opts)
     end
+
+    test "when callback returns a wish to be submitted"
+
+    test "when a callback returns a list of wishes to be submitted"
   end
 end
