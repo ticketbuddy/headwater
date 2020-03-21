@@ -20,10 +20,10 @@ defmodule Headwater.Listener.EventHandler do
   end
 
   defp execute_callback({recorded_event, handlers}, opts) do
-    %{event_store: event_store, bus_id: bus_id} = opts
+    %{event_store: event_store, bus_id: bus_id, router: router} = opts
 
     handlers
-    |> Enum.map(&call_handler(&1, recorded_event))
+    |> Enum.map(&call_handler(&1, recorded_event, router))
     |> Enum.all?()
     |> case do
       true ->
@@ -51,17 +51,18 @@ defmodule Headwater.Listener.EventHandler do
 
   defp build_causation_idempotency_key(handler, event) do
     (handler.listener_prefix() <> Integer.to_string(event.event_number) <> event.aggregate_id)
-    |> Headwater.web_safe_md5()
+    |> Headwater.Crypto.web_safe_md5()
   end
 
-  defp call_handler(handler, recorded_event) do
+  defp call_handler(handler, recorded_event, router) do
     notes = event_notes(handler, recorded_event)
 
     result = handler.handle_event(recorded_event.data, notes)
 
     case result do
-      {:submit, {wish_router, wish_or_wishes}} ->
-        result = List.wrap(wish_or_wishes) |> Enum.map(&wish_router.handle/1)
+      {:submit, wish_or_wishes} ->
+        result = wish_or_wishes |> List.wrap() |> Enum.map(&router.handle/1)
+
         handler_result(result, handler, recorded_event)
 
       result ->

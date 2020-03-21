@@ -7,13 +7,14 @@ defmodule Headwater.Listener.Supervisor do
 
   defmacro __using__(
              from_event_ref: from_event_ref,
-             event_store: event_store,
-             busses: busses
+             busses: busses,
+             config: config
            ) do
     quote do
       use Supervisor
       require Logger
       @busses unquote(busses)
+      @config unquote(config)
 
       def start_link(init_arg) do
         Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
@@ -47,7 +48,7 @@ defmodule Headwater.Listener.Supervisor do
       defp provider_opts(bus_id) do
         %{
           bus_id: bus_id,
-          event_store: unquote(event_store),
+          event_store: @config.event_store,
           from_event_ref: unquote(from_event_ref)
         }
       end
@@ -55,8 +56,9 @@ defmodule Headwater.Listener.Supervisor do
       defp consumer_opts(bus_id, handlers) do
         %{
           bus_id: bus_id,
-          event_store: unquote(event_store),
-          handlers: handlers
+          event_store: @config.event_store,
+          handlers: handlers,
+          router: @config.router
         }
       end
     end

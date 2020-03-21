@@ -1,7 +1,7 @@
 defmodule Headwater.Aggregate.AggregateWorkerTest do
   use ExUnit.Case
   alias Headwater.Aggregate.{AggregateWorker, AggregateConfig}
-  alias Headwater.AggregateDirectory.WriteRequest
+  alias Headwater.Aggregate.Directory.WriteRequest
 
   import Mox
   setup :set_mox_global

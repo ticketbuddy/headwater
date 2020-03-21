@@ -1,5 +1,10 @@
 defmodule Example do
-  use Headwater.Aggregate.Router, aggregate_directory: Example.Headwater.AggregateDirectory
+  use Headwater.Aggregate.EntryPoint,
+    config: %Headwater.Config{
+      event_store: Example.EventStore,
+      registry: Example.Registry,
+      supervisor: Example.Supervisor
+    }
 
   defaction(Example.Increment, to: Example.Counter, by_key: :counter_id)
   defread(:read_counter, to: Example.Counter)
