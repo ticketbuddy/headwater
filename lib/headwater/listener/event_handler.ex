@@ -61,6 +61,8 @@ defmodule Headwater.Listener.EventHandler do
 
     case result do
       {:submit, wish_or_wishes} ->
+
+        # TODO router.handle/1 should also take idempotency key.
         result = wish_or_wishes |> List.wrap() |> Enum.map(&router.handle/1)
 
         handler_result(result, handler, recorded_event)
