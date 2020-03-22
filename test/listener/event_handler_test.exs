@@ -1,6 +1,7 @@
 defmodule Headwater.Listener.EventHandlerTest do
   use ExUnit.Case
   alias Headwater.Listener.EventHandler
+  alias Headwater.Aggregate.Directory.WriteRequest
 
   import Mox
   setup :set_mox_global
@@ -131,6 +132,37 @@ defmodule Headwater.Listener.EventHandlerTest do
       Headwater.Aggregate.DirectoryMock
       |> expect(:handle, 2, fn _, _ ->
         {:ok, %FakeApp.Game{}}
+      end)
+
+      handlers = [FakeApp.EventHandlerMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
+      recorded_events = [recorded_events.one]
+
+      callbacks = EventHandler.build_callbacks(recorded_events, handlers)
+
+      assert :ok == EventHandler.callbacks(callbacks, opts)
+    end
+
+    test "when handler returns wishes with options", %{recorded_events: recorded_events} do
+      FakeApp.EventHandlerMock
+      |> expect(:listener_prefix, fn -> "yellow_bus_" end)
+
+      FakeApp.EventHandlerMock
+      |> expect(:handle_event, fn _recorded_event, _notes ->
+        {:submit,
+         [
+           {%FakeApp.ScoreTwoPoints{}, idempotency_key: "abcdef"}
+         ]}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:bus_has_completed_event_number, 1, fn _opts ->
+        :ok
+      end)
+
+      Headwater.Aggregate.DirectoryMock
+      |> expect(:handle, fn
+        %WriteRequest{idempotency_key: "abcdef"}, %Headwater.Config{} -> {:ok, %FakeApp.Game{}}
       end)
 
       handlers = [FakeApp.EventHandlerMock]
