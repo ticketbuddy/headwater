@@ -60,6 +60,9 @@ defmodule Headwater.Listener.EventHandler do
     result = handler.handle_event(recorded_event.data, notes)
 
     case result do
+      {:apply, module, func, args} ->
+        apply(module, func, args)
+
       {:submit, wish_or_wishes} ->
         result =
           wish_or_wishes
