@@ -22,7 +22,7 @@ defmodule Headwater.Listener.EventHandlerTest do
         two: %Headwater.EventStore.RecordedEvent{
           aggregate_id: "aggregate-id-abcdef",
           event_id: "kkk-qqq-rrr-ppp-ooo",
-          event_number: 52,
+          event_number: 51,
           aggregate_number: 2,
           data: 1,
           created_at: ~U[2020-02-20 18:06:31.495494Z],
@@ -51,7 +51,10 @@ defmodule Headwater.Listener.EventHandlerTest do
       |> expect(:handle_event, 2, fn _recorded_event, _notes -> {:ok, "a result"} end)
 
       FakeApp.EventStoreMock
-      |> expect(:bus_has_completed_event_number, 2, fn _opts -> :ok end)
+      |> expect(:bus_has_completed_event_number, 2, fn
+        [bus_id: "yellow-bus", event_number: 50] -> :ok
+        [bus_id: "yellow-bus", event_number: 51] -> :ok
+      end)
 
       handlers = [FakeApp.EventHandlerMock]
       opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
@@ -67,7 +70,14 @@ defmodule Headwater.Listener.EventHandlerTest do
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
       FakeApp.EventHandlerMock
-      |> expect(:handle_event, 1, fn _recorded_event, _notes ->
+      |> expect(:handle_event, 1, fn _recorded_event = 1,
+                                     %{
+                                       aggregate_number: 1,
+                                       effect_idempotent_key: "146243694CA13B32ADC5AFD0FC775598",
+                                       event_id: "zzz-xxx-ccc-vvv-fff",
+                                       event_number: 50,
+                                       event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
+                                     } ->
         {:error, "oh no, something went wrong"}
       end)
 
@@ -90,7 +100,14 @@ defmodule Headwater.Listener.EventHandlerTest do
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
       FakeApp.EventHandlerMock
-      |> expect(:handle_event, fn _recorded_event, _notes ->
+      |> expect(:handle_event, fn _recorded_event = 1,
+                                  %{
+                                    aggregate_number: 1,
+                                    effect_idempotent_key: "146243694CA13B32ADC5AFD0FC775598",
+                                    event_id: "zzz-xxx-ccc-vvv-fff",
+                                    event_number: 50,
+                                    event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
+                                  } ->
         {:submit, %FakeApp.ScorePoint{game_id: "game-one", value: 1}}
       end)
 
@@ -120,7 +137,14 @@ defmodule Headwater.Listener.EventHandlerTest do
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
       FakeApp.EventHandlerMock
-      |> expect(:handle_event, fn _recorded_event, _notes ->
+      |> expect(:handle_event, fn _event = 1,
+                                  %{
+                                    aggregate_number: 1,
+                                    effect_idempotent_key: "146243694CA13B32ADC5AFD0FC775598",
+                                    event_id: "zzz-xxx-ccc-vvv-fff",
+                                    event_number: 50,
+                                    event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
+                                  } ->
         {:submit, [%FakeApp.ScorePoint{game_id: "game-one", value: 1}, %FakeApp.ScoreTwoPoints{}]}
       end)
 
@@ -148,7 +172,14 @@ defmodule Headwater.Listener.EventHandlerTest do
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
       FakeApp.EventHandlerMock
-      |> expect(:handle_event, fn _recorded_event, _notes ->
+      |> expect(:handle_event, fn _event = 1,
+                                  %{
+                                    aggregate_number: 1,
+                                    effect_idempotent_key: "146243694CA13B32ADC5AFD0FC775598",
+                                    event_id: "zzz-xxx-ccc-vvv-fff",
+                                    event_number: 50,
+                                    event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
+                                  } ->
         {:submit,
          [
            {%FakeApp.ScoreTwoPoints{}, idempotency_key: "abcdef"}
@@ -156,7 +187,7 @@ defmodule Headwater.Listener.EventHandlerTest do
       end)
 
       FakeApp.EventStoreMock
-      |> expect(:bus_has_completed_event_number, 1, fn _opts ->
+      |> expect(:bus_has_completed_event_number, 1, fn [bus_id: "yellow-bus", event_number: 50] ->
         :ok
       end)
 

@@ -50,7 +50,7 @@ defmodule Headwater.Listener.EventHandler do
   end
 
   defp build_causation_idempotency_key(handler, event) do
-    (handler.listener_prefix() <> Integer.to_string(event.event_number) <> event.aggregate_id)
+    (handler.listener_prefix() <> event.event_id)
     |> Headwater.Crypto.web_safe_md5()
   end
 
