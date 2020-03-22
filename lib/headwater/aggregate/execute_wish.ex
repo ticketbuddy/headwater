@@ -4,7 +4,7 @@ defmodule Headwater.Aggregate.ExecuteWish do
 
   alias Headwater.EventStore.PersistEvent
   alias Headwater.Aggregate.AggregateConfig
-  alias Headwater.AggregateDirectory.WriteRequest
+  alias Headwater.Aggregate.Directory.WriteRequest
 
   def process(
         aggregate_config = %AggregateConfig{handler: handler, aggregate_state: aggregate_state},

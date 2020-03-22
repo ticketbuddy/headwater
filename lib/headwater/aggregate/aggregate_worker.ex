@@ -2,7 +2,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
   use GenServer
 
   alias Headwater.Aggregate.{NextState, ExecuteWish, AggregateConfig, Idempotency}
-  alias Headwater.AggregateDirectory.WriteRequest
+  alias Headwater.Aggregate.Directory.WriteRequest
   require Logger
 
   @moduledoc """

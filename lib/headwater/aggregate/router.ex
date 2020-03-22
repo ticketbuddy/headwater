@@ -1,42 +1,43 @@
 defmodule Headwater.Aggregate.Router do
-  defmacro __using__(aggregate_directory: aggregate_directory) do
+  alias Headwater.Aggregate.Wish
+  alias Headwater.Aggregate.Directory.{WriteRequest, ReadRequest}
+
+  defmacro __using__(config: config) do
     quote do
-      @aggregate_directory unquote(aggregate_directory)
-      import Headwater.Aggregate.Router, only: [defaction: 2, defread: 2]
-    end
-  end
+      alias Headwater.Aggregate.Directory.{ReadRequest, WriteRequest}
+      @config unquote(config)
+      import Headwater.Aggregate.Router, only: [defread: 2]
 
-  alias Headwater.AggregateDirectory.{WriteRequest, ReadRequest}
+      def handle(wish, opts \\ []) do
+        aggregate_id = Wish.aggregate_id(wish)
+        aggregate_handler = Wish.aggregate_handler(wish)
 
-  defmacro defaction(wish_module_or_modules, to: handler, by_key: key) do
-    wish_module_or_modules
-    |> List.wrap()
-    |> Enum.map(fn wish_module ->
-      quote do
-        def handle(wish = %unquote(wish_module){}), do: do_handle(wish, [])
-        def handle(wish = %unquote(wish_module){}, opts), do: do_handle(wish, opts)
+        write_request = %WriteRequest{
+          aggregate_id: aggregate_handler.aggregate_prefix() <> aggregate_id,
+          handler: aggregate_handler,
+          wish: wish,
+          idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.uuid())
+        }
 
-        defp do_handle(wish = %unquote(wish_module){}, opts) do
-          %WriteRequest{
-            aggregate_id: unquote(handler).aggregate_prefix <> Map.get(wish, unquote(key)),
-            handler: unquote(handler),
-            wish: wish,
-            idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.uuid())
-          }
-          |> @aggregate_directory.handle()
-        end
+        @config.directory.handle(write_request, @config)
       end
-    end)
+
+      defp config do
+        @config
+        |> Map.put(:router, __MODULE__)
+      end
+    end
   end
 
   defmacro defread(read, to: handler) when is_atom(read) do
     quote do
       def unquote(read)(aggregate_id) do
-        %ReadRequest{
+        read_request = %ReadRequest{
           aggregate_id: unquote(handler).aggregate_prefix <> aggregate_id,
           handler: unquote(handler)
         }
-        |> @aggregate_directory.read_state()
+
+        @config.directory.handle(read_request, @config)
       end
     end
   end

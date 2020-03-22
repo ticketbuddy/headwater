@@ -8,7 +8,8 @@ defmodule Headwater.Listener.ConsumerTest do
     opts = %{
       bus_id: "a-consumer-test-bus-id",
       event_store: FakeApp.EventStoreMock,
-      handlers: [FakeApp.PrinterMock]
+      handlers: [FakeApp.EventHandlerMock],
+      router: FakeApp
     }
 
     %{
@@ -41,10 +42,10 @@ defmodule Headwater.Listener.ConsumerTest do
       from_pid = self()
       state = opts
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:listener_prefix, 2, fn -> "a_listener_prefix_" end)
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:handle_event, 2, fn
         _expected_event = 1,
         %{
@@ -85,10 +86,10 @@ defmodule Headwater.Listener.ConsumerTest do
       from_pid = self()
       state = opts
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:listener_prefix, 2, fn -> "a_listener_prefix_" end)
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:handle_event, 2, fn
         _expected_event = 1,
         %{

@@ -43,17 +43,17 @@ defmodule Headwater.Listener.EventHandlerTest do
 
   describe "callbacks/2" do
     test "happy path", %{recorded_events: recorded_events} do
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:listener_prefix, 2, fn -> "yellow_bus_" end)
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:handle_event, 2, fn _recorded_event, _notes -> {:ok, "a result"} end)
 
       FakeApp.EventStoreMock
       |> expect(:bus_has_completed_event_number, 2, fn _opts -> :ok end)
 
-      handlers = [FakeApp.PrinterMock]
-      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus"}
+      handlers = [FakeApp.EventHandlerMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
       recorded_events = [recorded_events.one, recorded_events.two]
 
       callbacks = EventHandler.build_callbacks(recorded_events, handlers)
@@ -62,10 +62,10 @@ defmodule Headwater.Listener.EventHandlerTest do
     end
 
     test "halts processing callbakcs if a callback fails", %{recorded_events: recorded_events} do
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:handle_event, 1, fn _recorded_event, _notes ->
         {:error, "oh no, something went wrong"}
       end)
@@ -75,8 +75,8 @@ defmodule Headwater.Listener.EventHandlerTest do
         flunk("this should never be called!")
       end)
 
-      handlers = [FakeApp.PrinterMock]
-      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus"}
+      handlers = [FakeApp.EventHandlerMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
       recorded_events = [recorded_events.one, recorded_events.two]
 
       callbacks = EventHandler.build_callbacks(recorded_events, handlers)
@@ -85,12 +85,12 @@ defmodule Headwater.Listener.EventHandlerTest do
     end
 
     test "when callback returns a wish to be submitted", %{recorded_events: recorded_events} do
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:handle_event, fn _recorded_event, _notes ->
-        {:submit, {FakeApp.Router, %FakeApp.ScorePoint{}}}
+        {:submit, %FakeApp.ScorePoint{game_id: "game-one", value: 1}}
       end)
 
       FakeApp.EventStoreMock
@@ -98,8 +98,13 @@ defmodule Headwater.Listener.EventHandlerTest do
         :ok
       end)
 
-      handlers = [FakeApp.PrinterMock]
-      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus"}
+      Headwater.Aggregate.DirectoryMock
+      |> expect(:handle, fn _, _ ->
+        {:ok, %FakeApp.Game{}}
+      end)
+
+      handlers = [FakeApp.EventHandlerMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
       recorded_events = [recorded_events.one]
 
       callbacks = EventHandler.build_callbacks(recorded_events, handlers)
@@ -110,12 +115,12 @@ defmodule Headwater.Listener.EventHandlerTest do
     test "when a callback returns a list of wishes to be submitted", %{
       recorded_events: recorded_events
     } do
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:listener_prefix, fn -> "yellow_bus_" end)
 
-      FakeApp.PrinterMock
+      FakeApp.EventHandlerMock
       |> expect(:handle_event, fn _recorded_event, _notes ->
-        {:submit, {FakeApp.Router, [%FakeApp.ScorePoint{}, %FakeApp.ScoreTwoPoints{}]}}
+        {:submit, [%FakeApp.ScorePoint{game_id: "game-one", value: 1}, %FakeApp.ScoreTwoPoints{}]}
       end)
 
       FakeApp.EventStoreMock
@@ -123,8 +128,13 @@ defmodule Headwater.Listener.EventHandlerTest do
         :ok
       end)
 
-      handlers = [FakeApp.PrinterMock]
-      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus"}
+      Headwater.Aggregate.DirectoryMock
+      |> expect(:handle, 2, fn _, _ ->
+        {:ok, %FakeApp.Game{}}
+      end)
+
+      handlers = [FakeApp.EventHandlerMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
       recorded_events = [recorded_events.one]
 
       callbacks = EventHandler.build_callbacks(recorded_events, handlers)

@@ -2,7 +2,7 @@ defmodule Headwater.Aggregate.ExecuteWishTest do
   use ExUnit.Case
 
   alias Headwater.Aggregate.{ExecuteWish, AggregateConfig}
-  alias Headwater.AggregateDirectory.WriteRequest
+  alias Headwater.Aggregate.Directory.WriteRequest
 
   defmodule Wish do
     defstruct value: 3
