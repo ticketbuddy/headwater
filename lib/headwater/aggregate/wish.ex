@@ -22,6 +22,18 @@ defmodule Headwater.Aggregate.Wish do
     end
   end
 
+  def new(wish_module, params) when is_binary(wish_module) do
+    wish_module = Headwater.Utils.to_module(wish_module)
+
+    new(wish_module, params)
+  end
+
+  def new(wish_module, params) when is_atom(wish_module) do
+    params = Headwater.Utils.atomize_keys(params)
+
+    struct(wish_module, params)
+  end
+
   def aggregate_id(wish) do
     module = wish.__struct__
     module.aggregate_id(wish)

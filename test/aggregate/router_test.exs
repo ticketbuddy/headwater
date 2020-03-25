@@ -20,6 +20,21 @@ defmodule Headwater.Aggregate.RouterTest do
     assert {:ok, %FakeApp.Game{}} == FakeApp.handle(%FakeApp.ScoreTwoPoints{})
   end
 
+  test "can specify the wish and wish params seperately" do
+    Headwater.Aggregate.DirectoryMock
+    |> expect(:handle, fn %Headwater.Aggregate.Directory.WriteRequest{
+                            aggregate_id: "game-one",
+                            handler: FakeApp.Game,
+                            idempotency_key: _idempotency_key,
+                            wish: %FakeApp.ScoreTwoPoints{game_id: "game-one", value: 8}
+                          },
+                          %Headwater.Config{} ->
+      {:ok, %FakeApp.Game{}}
+    end)
+
+    assert {:ok, %FakeApp.Game{}} == FakeApp.handle("fake_app.score_two_points", %{value: 8}, [])
+  end
+
   test "uses the provided idempotency_key" do
     Headwater.Aggregate.DirectoryMock
     |> expect(:handle, fn %Headwater.Aggregate.Directory.WriteRequest{
