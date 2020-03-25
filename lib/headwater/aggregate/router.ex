@@ -22,12 +22,6 @@ defmodule Headwater.Aggregate.Router do
         @config.directory.handle(write_request, @config)
       end
 
-      def handle(wish_type, wish_params, opts) do
-        wish = Headwater.Aggregate.Wish.new(wish_type, wish_params)
-
-        handle(wish, opts)
-      end
-
       defp config do
         @config
         |> Map.put(:router, __MODULE__)

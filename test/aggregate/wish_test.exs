@@ -31,9 +31,4 @@ defmodule Headwater.Aggregate.WishTest do
     assert "abc" == Wish.aggregate_id(%Shop.CreateProduct{})
     assert "def" == Wish.aggregate_id(%Shop.CreateProduct{product_id: "def"})
   end
-
-  test "can specify wish in string format" do
-    assert %FakeApp.ScorePoint{game_id: "foo"} ==
-             Wish.new("fake_app.score_point", %{"game_id" => "foo"})
-  end
 end
