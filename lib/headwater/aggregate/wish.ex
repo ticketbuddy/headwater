@@ -29,6 +29,7 @@ defmodule Headwater.Aggregate.Wish do
   end
 
   def new(wish_module, params) when is_atom(wish_module) do
+    # TODO atomize only used params for the wish to prevent memory leak.
     params = Headwater.Utils.atomize_keys(params)
 
     struct(wish_module, params)
