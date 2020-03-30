@@ -117,6 +117,9 @@ defmodule Headwater.Aggregate.AggregateWorker do
       error = {:error, :next_state, _} ->
         Logger.error("Error next_state wish; #{inspect(error)}")
         {:reply, error, state}
+
+      {:error, :commit_error} ->
+        Logger.error("EventStore commit error")
     end
   end
 end
