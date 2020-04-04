@@ -1,6 +1,6 @@
 defmodule Example.RouterTest do
   use ExUnit.Case
-  use Headwater.TestHelper, event_store_repo: Example.Repo
+  use Headwater.TestHelper, repo: Example.Repo
 
   test "increments a counter and returns the state in an :ok tuple" do
     assert {:ok, %Example.Counter{total: 5}} ==
