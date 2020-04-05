@@ -7,6 +7,18 @@ defmodule Headwater.Aggregate.WishTest do
 
     defwish(CreateOrder, [:order_id, :title], to: Shop.Order)
     defwish(CreateProduct, [product_id: "abc", title: "T-Shirt"], to: Shop.Order)
+
+    defwish(
+      CreateReceipt,
+      [
+        {:_string, :order_id},
+        {:_number, :amount},
+        {:_map, :items},
+        {:_date, :issue_date},
+        {:_string, customer: "customer-1234"}
+      ],
+      to: Shop.Order
+    )
   end
 
   test "can initiate a struct" do
@@ -30,5 +42,21 @@ defmodule Headwater.Aggregate.WishTest do
   test "can get aggregate id when a default is given for the key" do
     assert "abc" == Wish.aggregate_id(%Shop.CreateProduct{})
     assert "def" == Wish.aggregate_id(%Shop.CreateProduct{product_id: "def"})
+  end
+
+  describe "more descriptive wishes for client docs" do
+    test "types provided" do
+      wish = %Shop.CreateReceipt{order_id: "order-12345"}
+
+      assert wish == %Shop.CreateReceipt{
+               order_id: "order-12345",
+               amount: nil,
+               items: nil,
+               issue_date: nil,
+               customer: "customer-1234"
+             }
+
+      assert "order-12345" == Wish.aggregate_id(wish)
+    end
   end
 end
