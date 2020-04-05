@@ -2,7 +2,6 @@ defmodule Headwater.TestHelper do
   defmacro __using__(repo: repos) do
     quote do
       setup tags do
-
         unquote(repos)
         |> List.wrap()
         |> Enum.each(fn repo ->

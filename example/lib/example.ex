@@ -1,5 +1,5 @@
 defmodule Example do
-  import Headwater.Aggregate.Wish, only: [defwish: 3]
+  use Headwater.Aggregate.Wish
 
   defwish(Increment, [:counter_id, :increment_by], to: Example.Counter)
   defwish(MultiIncrement, [:counter_id, :increment_by, :increment_again], to: Example.Counter)

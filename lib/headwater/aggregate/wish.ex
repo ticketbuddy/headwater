@@ -1,6 +1,18 @@
 defmodule Headwater.Aggregate.Wish do
+  defmacro __using__(_opts) do
+    quote do
+      import Headwater.Aggregate.Wish, only: [defwish: 3]
+
+      @wishes []
+
+      @before_compile Headwater.Aggregate.Wish
+    end
+  end
+
   defmacro defwish(name, attributes, to: aggregate_handler) do
     quote do
+      @wishes [{unquote(name), unquote(attributes), unquote(aggregate_handler)} | @wishes]
+
       defmodule unquote(name) do
         defstruct unquote(attributes)
         @attributes unquote(attributes)
@@ -30,5 +42,11 @@ defmodule Headwater.Aggregate.Wish do
   def aggregate_handler(wish) do
     module = wish.__struct__
     module.aggregate_handler()
+  end
+
+  defmacro __before_compile__(_env) do
+    quote do
+      def wishes, do: @wishes
+    end
   end
 end
