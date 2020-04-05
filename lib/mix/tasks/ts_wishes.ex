@@ -43,7 +43,7 @@ defmodule Mix.Tasks.TsWishes do
 
       case type do
         :hide -> ""
-        attr -> "\n\t#{attr}: #{type};"
+        _type -> "\n\t#{attr}: #{type};"
       end
     end)
     |> Enum.join("")

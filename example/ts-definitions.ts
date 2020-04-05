@@ -1,10 +1,9 @@
 export type MultiIncrement = {
-	string: string;
-	number: number;
+	counter_id: string;
+	increment_by: number;
 };
 
 export type Increment = {
-	string: string;
-	number: number;
+	counter_id: string;
+	increment_by: number;
 };
-
