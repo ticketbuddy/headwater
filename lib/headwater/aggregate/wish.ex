@@ -5,6 +5,7 @@ defmodule Headwater.Aggregate.Wish do
 
       @wishes []
 
+      Module.register_attribute(__MODULE__, :ts_definition, accumulate: true, persist: false)
       @before_compile Headwater.Aggregate.Wish
     end
   end
@@ -44,9 +45,12 @@ defmodule Headwater.Aggregate.Wish do
     module.aggregate_handler()
   end
 
-  defmacro __before_compile__(_env) do
+  defmacro __before_compile__(env) do
+    attributes = Module.get_attribute(env.module, :ts_definition)
+
     quote do
       def wishes, do: @wishes
+      def attributes, do: unquote(attributes)
     end
   end
 end
