@@ -11,7 +11,7 @@ defmodule Mix.Tasks.TsWishes do
 
     wishes
     |> Enum.map(&to_typescript_definition(&1, type_definitions))
-    |> Enum.join("\n\n")
+    |> Enum.join("")
     |> write_to_file()
   end
 
@@ -20,25 +20,31 @@ defmodule Mix.Tasks.TsWishes do
   end
 
   defp to_typescript_definition({wish_name, attributes, _handler}, type_definitions) do
-    types = Map.get(type_definitions, wish_name, [])
-    type = wish_name_to_type_name(wish_name)
-    ~s(export type #{type} = {#{build_attributes(attributes, types)}
-};)
+    types = Map.get(type_definitions, wish_name, :no_types)
+
+    case types do
+      :no_types ->
+        ""
+
+      _type ->
+        type = wish_name_to_type_name(wish_name)
+        ~s(export type #{type} = {#{build_attributes(attributes, types)}
+};\n\n)
+    end
   end
 
   defp wish_name_to_type_name(wish_name), do: String.replace_prefix("#{wish_name}", "Elixir.", "")
 
   defp build_attributes(attributes, types) do
-
     attributes
     |> Enum.with_index()
     |> Enum.map(fn {attr, index} ->
-        type = Enum.at(types, index, "any")
+      type = Enum.at(types, index, "any")
 
-        case type do
-          :hide -> ""
-          attr -> "\n\t#{attr}: #{type};"
-        end
+      case type do
+        :hide -> ""
+        attr -> "\n\t#{attr}: #{type};"
+      end
     end)
     |> Enum.join("")
   end
