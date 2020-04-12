@@ -42,7 +42,8 @@ defmodule Headwater.EventStore.Adapters.Postgres.Commit do
     end
   end
 
-  def on_commit_result(_error) do
+  def on_commit_result(error) do
+    Logger.log(:error, "Commit error: #{inspect(error)}")
     {:error, :commit_error}
   end
 end
