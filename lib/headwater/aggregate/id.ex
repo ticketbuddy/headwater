@@ -45,11 +45,14 @@ defmodule Headwater.Aggregate.Id do
 
       iex> is_valid?("creditor8790ce86756844c18e6ac51708524e7e")
       false
+
+      iex> is_valid?("areallyreallyreallyreallyreallylongprefix_5")
+      false
   """
   def is_valid?(id) do
     case String.length(id) do
-      32 -> true
-      num when num < 32 -> false
+      @uuid_v4_hex_length -> true
+      num when num < @uuid_v4_hex_length -> false
       _num -> prefix_ends_with_underscore?(id) && only_one_underscore?(id)
     end
   end
