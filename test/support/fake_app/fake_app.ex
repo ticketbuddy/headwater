@@ -32,7 +32,7 @@ defmodule FakeApp.Game do
   @behaviour Headwater.Aggregate.Handler
 
   @impl Headwater.Aggregate.Handler
-  def aggregate_prefix, do: "game_"
+  def id_prefix, do: "game_"
 
   @impl Headwater.Aggregate.Handler
   def execute(_current_state, wish = %FakeApp.ScorePoint{value: value, game_id: game_id}) do

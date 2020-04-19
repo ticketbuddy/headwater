@@ -46,7 +46,7 @@ defmodule Headwater.Aggregate.Wish do
 
   def id_with_prefix(wish) do
     module = wish.__struct__
-    prefix = module.aggregate_handler().aggregate_prefix()
+    prefix = module.aggregate_handler().id_prefix()
     current_id = aggregate_id(wish)
 
     case Headwater.Aggregate.Id.prefix_id(prefix, current_id) do
