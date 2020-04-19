@@ -17,6 +17,12 @@ defmodule Headwater.Aggregate.Id do
       iex> prefix_id("creditor_", "account_8790ce86756844c18e6ac51708524e7e")
       {:ok, "creditor_8790ce86756844c18e6ac51708524e7e"}
 
+      iex> prefix_id("item_", "product_8790ce86756844c18e6ac51708524e7e")
+      {:ok, "item_8790ce86756844c18e6ac51708524e7e"}
+
+      iex> prefix_id("seat_", "item_8790ce86756844c18e6ac51708524e7e.34578")
+      {:ok, "seat_8790ce86756844c18e6ac51708524e7e.34578"}
+
       iex> prefix_id("foo_", "a_8790ce86756844c18e6ac51708524e7e")
       {:ok, "foo_8790ce86756844c18e6ac51708524e7e"}
 
@@ -25,8 +31,32 @@ defmodule Headwater.Aggregate.Id do
   """
   def prefix_id(prefix, id) do
     case is_valid?(id) do
-      true -> {:ok, prefix <> String.slice(id, -@uuid_v4_hex_length, @uuid_v4_hex_length)}
-      false -> {:warn, :invalid_id}
+      true ->
+        {_old_prefix, id} = pop_prefix(id)
+        {:ok, prefix <> id}
+
+      false ->
+        {:warn, :invalid_id}
+    end
+  end
+
+  @doc ~S"""
+  Validates an id.
+
+  ## Examples
+      iex> pop_prefix("8790ce86756844c18e6ac51708524e7e")
+      {"", "8790ce86756844c18e6ac51708524e7e"}
+
+      iex> pop_prefix("shop_8790ce86756844c18e6ac51708524e7e")
+      {"shop_", "8790ce86756844c18e6ac51708524e7e"}
+
+      iex> pop_prefix("item_8790ce86756844c18e6ac51708524e7e.73438h")
+      {"item_", "8790ce86756844c18e6ac51708524e7e.73438h"}
+  """
+  def pop_prefix(id) do
+    case String.split(id, "_") do
+      [prefix, id] -> {prefix <> "_", id}
+      [id] -> {"", id}
     end
   end
 
@@ -38,6 +68,9 @@ defmodule Headwater.Aggregate.Id do
       true
 
       iex> is_valid?("creditor_8790ce86756844c18e6ac51708524e7e")
+      true
+
+      iex> is_valid?("item_8790ce86756844c18e6ac51708524e7e.484945j4j9j5")
       true
 
       iex> is_valid?("pre_fix_8790ce86756844c18e6ac51708524e7e")
@@ -53,15 +86,16 @@ defmodule Headwater.Aggregate.Id do
     case String.length(id) do
       @uuid_v4_hex_length -> true
       num when num < @uuid_v4_hex_length -> false
-      _num -> prefix_ends_with_underscore?(id) && only_one_underscore?(id)
+      _num -> exactly_one_underscore?(id) && id_at_least_v4_hex_length?(id)
     end
   end
 
-  defp prefix_ends_with_underscore?(id) do
-    String.slice(id, -(@uuid_v4_hex_length + 1), 1) == "_"
+  defp id_at_least_v4_hex_length?(id) do
+    {prefix, id} = pop_prefix(id)
+    String.length(id) >= @uuid_v4_hex_length
   end
 
-  defp only_one_underscore?(id) do
+  defp exactly_one_underscore?(id) do
     1 == id |> String.graphemes() |> Enum.count(&(&1 == "_"))
   end
 end
