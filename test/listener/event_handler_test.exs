@@ -108,7 +108,7 @@ defmodule Headwater.Listener.EventHandlerTest do
                                     event_number: 50,
                                     event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
                                   } ->
-        {:submit, %FakeApp.ScorePoint{game_id: "game-one", value: 1}}
+        {:submit, %FakeApp.ScorePoint{game_id: "game_8790ce86756844c18e6ac51708524e7e", value: 1}}
       end)
 
       FakeApp.EventStoreMock
@@ -145,7 +145,11 @@ defmodule Headwater.Listener.EventHandlerTest do
                                     event_number: 50,
                                     event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
                                   } ->
-        {:submit, [%FakeApp.ScorePoint{game_id: "game-one", value: 1}, %FakeApp.ScoreTwoPoints{}]}
+        {:submit,
+         [
+           %FakeApp.ScorePoint{game_id: "game_8790ce86756844c18e6ac51708524e7e", value: 1},
+           %FakeApp.ScoreTwoPoints{}
+         ]}
       end)
 
       FakeApp.EventStoreMock

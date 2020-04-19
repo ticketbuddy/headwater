@@ -13,4 +13,5 @@ defmodule Headwater.Success do
   def success?(:ok), do: true
   def success?({:error, _reason}), do: false
   def success?(:error), do: false
+  def success?({:warn, :invalid_id}), do: false
 end

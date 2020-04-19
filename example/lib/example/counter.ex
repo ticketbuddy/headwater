@@ -1,7 +1,7 @@
 defmodule Example.Counter do
   defstruct [:total]
 
-  def aggregate_prefix, do: ""
+  def id_prefix, do: "counter_"
 
   def execute(current_state, wish = %Example.MultiIncrement{}) do
     {:ok,
