@@ -4,7 +4,10 @@ defmodule Example.RouterTest do
 
   test "increments a counter and returns the state in an :ok tuple" do
     assert {:ok, %Example.Counter{total: 5}} ==
-             Example.Router.handle(%Example.Increment{counter_id: "abc", increment_by: 5})
+             Example.Router.handle(%Example.Increment{
+               counter_id: "counter_8790ce86756844c18e6ac51708524e7e",
+               increment_by: 5
+             })
   end
 
   test "idempotent requests return same state" do
@@ -13,19 +16,28 @@ defmodule Example.RouterTest do
 
     assert {:ok, expected_state} ==
              Example.Router.handle(
-               %Example.Increment{counter_id: "idempo-counter", increment_by: 5},
+               %Example.Increment{
+                 counter_id: "counter_idempoidempoidempoidempoidempo7e",
+                 increment_by: 5
+               },
                idempotency_key: idempotency
              )
 
     assert {:ok, expected_state} ==
              Example.Router.handle(
-               %Example.Increment{counter_id: "idempo-counter", increment_by: 5},
+               %Example.Increment{
+                 counter_id: "counter_idempoidempoidempoidempoidempo7e",
+                 increment_by: 5
+               },
                idempotency_key: idempotency
              )
 
     assert {:ok, expected_state} ==
              Example.Router.handle(
-               %Example.Increment{counter_id: "idempo-counter", increment_by: 5},
+               %Example.Increment{
+                 counter_id: "counter_idempoidempoidempoidempoidempo7e",
+                 increment_by: 5
+               },
                idempotency_key: idempotency
              )
   end

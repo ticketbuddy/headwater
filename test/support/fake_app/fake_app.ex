@@ -10,26 +10,29 @@ defmodule FakeApp do
     }
 
   defwish(ScorePoint, [:game_id, :value], to: FakeApp.Game)
-  defwish(ScoreTwoPoints, [game_id: "game-one", value: 1], to: FakeApp.Game)
+
+  defwish(ScoreTwoPoints, [game_id: "game_8790ce86756844c18e6ac51708524e7e", value: 1],
+    to: FakeApp.Game
+  )
 
   defread(:get_score, to: FakeApp.Game)
 end
 
 defmodule FakeApp.PointScored do
-  defstruct value: 1, game_id: "game-one"
+  defstruct value: 1, game_id: "game_8790ce86756844c18e6ac51708524e7e"
 end
 
 defmodule FakeApp.TwoPointsScored do
-  defstruct value: 2, game_id: "game-one"
+  defstruct value: 2, game_id: "game_8790ce86756844c18e6ac51708524e7e"
 end
 
 defmodule FakeApp.Game do
-  defstruct total: 0, game_id: "game-one"
+  defstruct total: 0, game_id: "game_8790ce86756844c18e6ac51708524e7e"
 
   @behaviour Headwater.Aggregate.Handler
 
   @impl Headwater.Aggregate.Handler
-  def aggregate_prefix, do: ""
+  def aggregate_prefix, do: "game_"
 
   @impl Headwater.Aggregate.Handler
   def execute(_current_state, wish = %FakeApp.ScorePoint{value: value, game_id: game_id}) do

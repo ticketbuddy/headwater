@@ -9,17 +9,21 @@ defmodule Headwater.Aggregate.Router do
       import Headwater.Aggregate.Router, only: [defread: 2]
 
       def handle(wish, opts \\ []) do
-        aggregate_id = Wish.aggregate_id(wish)
-        aggregate_handler = Wish.aggregate_handler(wish)
+        with {:ok, wish} <- Wish.id_with_prefix(wish) do
+          aggregate_id = Wish.aggregate_id(wish)
+          aggregate_handler = Wish.aggregate_handler(wish)
 
-        write_request = %WriteRequest{
-          aggregate_id: aggregate_handler.aggregate_prefix() <> aggregate_id,
-          handler: aggregate_handler,
-          wish: wish,
-          idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.uuid())
-        }
+          write_request = %WriteRequest{
+            aggregate_id: aggregate_id,
+            handler: aggregate_handler,
+            wish: wish,
+            idempotency_key: Keyword.get(opts, :idempotency_key, Headwater.uuid())
+          }
 
-        @config.directory.handle(write_request, @config)
+          @config.directory.handle(write_request, @config)
+        else
+          {:warn, :invalid_id} -> {:warn, :invalid_id}
+        end
       end
 
       defp config do
@@ -33,7 +37,7 @@ defmodule Headwater.Aggregate.Router do
     quote do
       def unquote(read)(aggregate_id) do
         read_request = %ReadRequest{
-          aggregate_id: unquote(handler).aggregate_prefix <> aggregate_id,
+          aggregate_id: aggregate_id,
           handler: unquote(handler)
         }
 

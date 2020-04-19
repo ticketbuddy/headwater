@@ -5,13 +5,20 @@ defmodule Headwater.Aggregate.RouterTest do
   setup :set_mox_global
   setup :verify_on_exit!
 
+  test "returns error when id is invalid" do
+    assert {:warn, :invalid_id} == FakeApp.handle(%FakeApp.ScoreTwoPoints{game_id: "invalid-id"})
+  end
+
   test "calls directory to submit a wish to an aggregate" do
     Headwater.Aggregate.DirectoryMock
     |> expect(:handle, fn %Headwater.Aggregate.Directory.WriteRequest{
-                            aggregate_id: "game-one",
+                            aggregate_id: "game_8790ce86756844c18e6ac51708524e7e",
                             handler: FakeApp.Game,
                             idempotency_key: _idempotency_key,
-                            wish: %FakeApp.ScoreTwoPoints{game_id: "game-one", value: 1}
+                            wish: %FakeApp.ScoreTwoPoints{
+                              game_id: "game_8790ce86756844c18e6ac51708524e7e",
+                              value: 1
+                            }
                           },
                           %Headwater.Config{} ->
       {:ok, %FakeApp.Game{}}
@@ -37,12 +44,12 @@ defmodule Headwater.Aggregate.RouterTest do
     Headwater.Aggregate.DirectoryMock
     |> expect(:handle, fn %Headwater.Aggregate.Directory.ReadRequest{
                             handler: FakeApp.Game,
-                            aggregate_id: "game-one"
+                            aggregate_id: "game_8790ce86756844c18e6ac51708524e7e"
                           },
                           %Headwater.Config{} ->
       {:ok, %FakeApp.Game{}}
     end)
 
-    assert {:ok, %FakeApp.Game{}} == FakeApp.get_score("game-one")
+    assert {:ok, %FakeApp.Game{}} == FakeApp.get_score("game_8790ce86756844c18e6ac51708524e7e")
   end
 end
