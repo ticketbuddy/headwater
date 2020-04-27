@@ -12,7 +12,7 @@ defmodule Example.Counter do
   end
 
   def execute(current_state, wish = %Example.Increment{}) do
-    {:ok, %Example.Incremented{increment_by: wish.increment_by}}
+    {:ok, %Example.Incremented{counter_id: wish.counter_id, increment_by: wish.increment_by}}
   end
 
   def next_state(nil, event) do

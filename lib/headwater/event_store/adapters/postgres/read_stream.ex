@@ -1,13 +1,14 @@
 defmodule Headwater.EventStore.Adapters.Postgres.ReadStream do
-  def read(callback, opts) do
-    {from_event_number, opts} = Keyword.pop(opts, :starting_event_number, 0)
-
+  def read(callback, base_count) do
     Elixir.Stream.resource(
-      fn -> from_event_number end,
-      fn next_event_number ->
-        case callback.(next_event_number) do
-          {:ok, []} -> {:halt, next_event_number}
-          {:ok, events} -> {events, next_event_number + length(events)}
+      fn -> base_count end,
+      fn next_event_count ->
+        case callback.(next_event_count) do
+          {:ok, []} ->
+            {:halt, next_event_count}
+
+          {:ok, events} ->
+            {events, next_event_count + length(events)}
         end
       end,
       fn _ -> :ok end
