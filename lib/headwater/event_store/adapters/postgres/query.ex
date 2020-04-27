@@ -19,11 +19,12 @@ defmodule Headwater.EventStore.Adapters.Postgres.Query do
   end
 
   def recorded_events(aggregate_id, opts) do
-    {from_event_number, opts} = Keyword.pop(opts, :from_event_number, 0)
+    {from_aggregate_number, opts} = Keyword.pop(opts, :from_aggregate_number, 0)
     {read_batch_size, opts} = Keyword.pop(opts, :read_batch, @default_batch_read_size)
 
     from(event in HeadwaterEventsSchema,
-      where: event.aggregate_id == ^aggregate_id and event.event_number > ^from_event_number,
+      where:
+        event.aggregate_id == ^aggregate_id and event.aggregate_number > ^from_aggregate_number,
       order_by: [asc: event.event_number],
       limit: ^read_batch_size
     )

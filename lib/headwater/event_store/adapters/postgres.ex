@@ -36,33 +36,35 @@ defmodule Headwater.EventStore.Adapters.Postgres do
           ReadStream.read(
             fn next_event_number ->
               Query.recorded_events(from_event_number: next_event_number)
-              |> execute__and_decode_events()
+              |> execute_and_decode_events()
             end,
-            starting_event_number: starting_event_number
+            starting_event_number
           )
 
         {:ok, recorded_events_stream}
       end
 
       @impl Headwater.EventStore
-      def load_events_for_aggregate(aggregate_id, starting_event_number \\ 0) do
+      def load_events_for_aggregate(aggregate_id, starting_aggregate_number \\ 0) do
         Logger.info(fn ->
-          "Loading events for aggregate #{aggregate_id} from #{starting_event_number}."
+          "Loading events for aggregate #{aggregate_id} from aggregate number #{
+            starting_aggregate_number
+          }."
         end)
 
         recorded_events_stream =
           ReadStream.read(
-            fn next_event_number ->
-              Query.recorded_events(aggregate_id, from_event_number: next_event_number)
-              |> execute__and_decode_events()
+            fn next_aggregate_number ->
+              Query.recorded_events(aggregate_id, from_aggregate_number: next_aggregate_number)
+              |> execute_and_decode_events()
             end,
-            starting_event_number: starting_event_number
+            starting_aggregate_number
           )
 
         {:ok, recorded_events_stream}
       end
 
-      defp execute__and_decode_events(query) do
+      defp execute_and_decode_events(query) do
         deserialized_events =
           query
           |> @repo.all()
