@@ -40,12 +40,16 @@ defmodule Headwater.Listener.Supervisor do
 
       defp bus_process_description({bus_id, handlers}) do
         [
-          {Headwater.Listener.Provider, provider_opts(bus_id)},
-          {Headwater.Listener.Consumer, consumer_opts(bus_id, handlers)}
+          Supervisor.child_spec({Headwater.Listener.Provider, provider_args(bus_id)},
+            id: "headwater_provider_#{bus_id}"
+          ),
+          Supervisor.child_spec({Headwater.Listener.Consumer, consumer_args(bus_id, handlers)},
+            id: "headwater_consumer_#{bus_id}"
+          )
         ]
       end
 
-      defp provider_opts(bus_id) do
+      defp provider_args(bus_id) do
         %{
           bus_id: bus_id,
           event_store: @config.event_store,
@@ -53,7 +57,7 @@ defmodule Headwater.Listener.Supervisor do
         }
       end
 
-      defp consumer_opts(bus_id, handlers) do
+      defp consumer_args(bus_id, handlers) do
         %{
           bus_id: bus_id,
           event_store: @config.event_store,

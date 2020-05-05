@@ -10,7 +10,8 @@ defmodule ExampleListener do
   use Headwater.Listener.Supervisor,
     from_event_ref: 0,
     busses: [
-      {"first_bus", [Example.Printer]}
+      {"first_bus", [Example.Printer]},
+      {"second_bus", [Example.Printer]}
     ],
     config: %Headwater.Config{
       event_store: Example.EventStore,
