@@ -260,15 +260,7 @@ defmodule Headwater.Listener.EventHandlerTest do
                               {FakeApp.EventHandlerMock, :test_time_traveler_callback,
                                [
                                  FakeApp,
-                                 %Headwater.EventStore.RecordedEvent{
-                                   aggregate_id: "aggregate-id-abcdef",
-                                   aggregate_number: 1,
-                                   created_at: ~U[2020-02-20 18:06:31.495494Z],
-                                   data: 1,
-                                   event_id: "zzz-xxx-ccc-vvv-fff",
-                                   event_number: 50,
-                                   idempotency_key: "idempo-4535"
-                                 },
+                                 _event = 1,
                                  %{
                                    aggregate_number: 1,
                                    effect_idempotent_key: "146243694CA13B32ADC5AFD0FC775598",

@@ -63,7 +63,7 @@ defmodule Headwater.Listener.EventHandler do
 
     case result do
       {:apply_later_with_router, time_opts, func} ->
-        @time_traveler.remember(time_opts, {handler, func, [router, recorded_event, notes]})
+        @time_traveler.remember(time_opts, {handler, func, [router, recorded_event.data, notes]})
 
       {:apply, module, func, args} ->
         apply(module, func, args)
