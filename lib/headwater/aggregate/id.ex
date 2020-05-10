@@ -81,7 +81,12 @@ defmodule Headwater.Aggregate.Id do
 
       iex> is_valid?("areallyreallyreallyreallyreallylongprefix_5")
       false
+
+      iex> is_valid?(nil)
+      false
   """
+  def is_valid?(nil), do: false
+
   def is_valid?(id) do
     case String.length(id) do
       @uuid_v4_hex_length -> true
