@@ -100,10 +100,6 @@ defmodule Headwater.Aggregate.AggregateWorker do
          {:ok, recorded_events} <- aggregate_config.event_store.commit(persist_events),
          {:ok, aggregate_config} <-
            NextState.process(aggregate_config, recorded_events) do
-      Logger.info(
-        "New event recorded. aggregate_number is now #{aggregate_config.aggregate_number}."
-      )
-
       {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}
     else
       {:error, :idempotency_key_used} ->

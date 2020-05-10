@@ -55,6 +55,8 @@ defmodule Headwater.Listener.EventHandler do
   end
 
   defp call_handler(handler, recorded_event, router) do
+    Logger.info("Event handler #{inspect(handler)} :: #{inspect(recorded_event.data)}")
+
     notes = event_notes(handler, recorded_event)
 
     result = handler.handle_event(recorded_event.data, notes)
