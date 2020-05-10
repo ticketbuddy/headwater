@@ -240,5 +240,53 @@ defmodule Headwater.Listener.EventHandlerTest do
 
       assert_receive(:_external_api_do_something, 5000)
     end
+
+    test "apply later with router", %{recorded_events: recorded_events} do
+      FakeApp.EventHandlerMock
+      |> expect(:listener_prefix, fn -> "yellow_bus_" end)
+
+      FakeApp.EventHandlerMock
+      |> expect(:handle_event, fn _event, _notes ->
+        {:apply_later_with_router, {15, :minutes}, :test_time_traveler_callback}
+      end)
+
+      FakeApp.EventStoreMock
+      |> expect(:bus_has_completed_event_number, fn [bus_id: "yellow-bus", event_number: 50] ->
+        :ok
+      end)
+
+      Headwater.TimeTravelerMock
+      |> expect(:remember, fn {15, :minutes},
+                              {FakeApp.EventHandlerMock, :test_time_traveler_callback,
+                               [
+                                 FakeApp,
+                                 %Headwater.EventStore.RecordedEvent{
+                                   aggregate_id: "aggregate-id-abcdef",
+                                   aggregate_number: 1,
+                                   created_at: ~U[2020-02-20 18:06:31.495494Z],
+                                   data: 1,
+                                   event_id: "zzz-xxx-ccc-vvv-fff",
+                                   event_number: 50,
+                                   idempotency_key: "idempo-4535"
+                                 },
+                                 %{
+                                   aggregate_number: 1,
+                                   effect_idempotent_key: "146243694CA13B32ADC5AFD0FC775598",
+                                   event_id: "zzz-xxx-ccc-vvv-fff",
+                                   event_number: 50,
+                                   event_occurred_at: ~U[2020-02-20 18:06:31.495494Z]
+                                 }
+                               ]} ->
+        :ok
+      end)
+
+      handlers = [FakeApp.EventHandlerMock]
+      opts = %{event_store: FakeApp.EventStoreMock, bus_id: "yellow-bus", router: FakeApp}
+      recorded_events = [recorded_events.one]
+
+      callbacks = EventHandler.build_callbacks(recorded_events, handlers)
+
+      assert :ok == EventHandler.callbacks(callbacks, opts)
+    end
   end
 end

@@ -6,6 +6,8 @@ defmodule Headwater.Listener.EventHandler do
   @callback listener_prefix() :: String.t()
   @callback handle_event(any(), notes) :: {:ok, any()} | :ok
 
+  @time_traveler Application.get_env(:headwater, :time_traveler, Headwater.TimeTravelerMock)
+
   def build_callbacks(recorded_events, handlers) do
     Enum.map(recorded_events, &{&1, handlers})
   end
@@ -60,6 +62,9 @@ defmodule Headwater.Listener.EventHandler do
     result = handler.handle_event(recorded_event.data, notes)
 
     case result do
+      {:apply_later_with_router, time_opts, func} ->
+        @time_traveler.remember(time_opts, {handler, func, [router, recorded_event, notes]})
+
       {:apply, module, func, args} ->
         apply(module, func, args)
 
