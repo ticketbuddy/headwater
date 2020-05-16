@@ -15,23 +15,21 @@ defmodule Headwater.Aggregate.Idempotency do
   """
   require Logger
   alias Headwater.Aggregate.AggregateConfig
+  @idempotency_ets_table :headwater_idempotency
 
   def store(aggregate_config = %AggregateConfig{}, idempotency_key) do
     Logger.info("Recording idempotency key #{idempotency_key}.")
 
-    aggregate_config
-    |> ensure_started()
-    |> table_name()
-    |> :ets.insert({idempotency_key})
+    ensure_started()
+    :ets.insert(@idempotency_ets_table, {idempotency_key})
 
     aggregate_config
   end
 
   def key_status(aggregate_config = %AggregateConfig{}, idempotency_key) do
-    aggregate_config
-    |> ensure_started()
-    |> table_name()
-    |> :ets.lookup(idempotency_key)
+    ensure_started()
+
+    :ets.lookup(@idempotency_ets_table, idempotency_key)
     |> case do
       [] ->
         Logger.info("Idempotency key #{idempotency_key} not used.")
@@ -43,20 +41,13 @@ defmodule Headwater.Aggregate.Idempotency do
     end
   end
 
-  defp ensure_started(aggregate_config = %AggregateConfig{}) do
-    idempotency_table = table_name(aggregate_config)
-
-    case :ets.whereis(idempotency_table) do
+  defp ensure_started do
+    case :ets.whereis(@idempotency_ets_table) do
       :undefined ->
-        :ets.new(idempotency_table, [:set, :protected, :named_table, read_concurrency: true])
-        aggregate_config
+        :ets.new(@idempotency_ets_table, [:set, :protected, :named_table, read_concurrency: true])
 
       _reference ->
-        aggregate_config
+        nil
     end
-  end
-
-  defp table_name(%AggregateConfig{id: aggregate_id}) do
-    :"headwater_idem_#{aggregate_id}"
   end
 end
