@@ -28,14 +28,12 @@ defmodule Headwater.Aggregate.Idempotency do
     {:ok, init_state}
   end
 
-  def store(aggregate_config = %AggregateConfig{}, idempotency_key) do
+  def store(idempotency_key) do
     Logger.info("Recording idempotency key #{idempotency_key}.")
     :ets.insert(:headwater_idempotency, {idempotency_key})
-
-    aggregate_config
   end
 
-  def key_status(aggregate_config = %AggregateConfig{}, idempotency_key) do
+  def key_status(idempotency_key) do
     :ets.lookup(:headwater_idempotency, idempotency_key)
     |> case do
       [] ->

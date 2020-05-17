@@ -233,7 +233,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
         idempotency_key: "idempo-12345"
       }
 
-      Headwater.Aggregate.Idempotency.store(aggregate_config, "idempo-12345")
+      Headwater.Aggregate.Idempotency.store("idempo-12345")
 
       assert {:ok, _pid} = AggregateWorker.new(aggregate_config)
       assert {:ok, 34589} = AggregateWorker.propose_wish(aggregate_config, write_request)
@@ -281,7 +281,7 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
       assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
 
       assert {:ok, :idempotency_key_available} ==
-               Headwater.Aggregate.Idempotency.key_status(aggregate_config, "idempo-12345"),
+               Headwater.Aggregate.Idempotency.key_status("idempo-12345"),
              "Idempotency key should remain available"
     end
   end
