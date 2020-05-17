@@ -16,7 +16,7 @@ defmodule Headwater.Aggregate.IdempotencyTest do
 
     assert true == Idempotency.store(idempotency_key)
 
-    assert {:error, :idempotency_key_used} ==
+    assert {:warn, :idempotency_key_used} ==
              Idempotency.key_status(idempotency_key)
   end
 end

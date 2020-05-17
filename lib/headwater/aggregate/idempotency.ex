@@ -42,7 +42,7 @@ defmodule Headwater.Aggregate.Idempotency do
 
       [{^idempotency_key}] ->
         Logger.info("Idempotency key #{idempotency_key} used.")
-        {:error, :idempotency_key_used}
+        {:warn, :idempotency_key_used}
     end
   end
 end

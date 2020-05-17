@@ -102,7 +102,7 @@ defmodule Headwater.Aggregate.AggregateWorker do
            NextState.process(aggregate_config, recorded_events) do
       {:reply, {:ok, aggregate_config.aggregate_state}, aggregate_config}
     else
-      {:error, :idempotency_key_used} ->
+      {:warn, :idempotency_key_used} ->
         Logger.warn("Idempotency key already used for wish.")
         {:reply, {:ok, aggregate_config.aggregate_state}, state}
 
