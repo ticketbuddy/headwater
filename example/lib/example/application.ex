@@ -5,6 +5,7 @@ defmodule Example.Application do
     children =
       [
         Example.Repo,
+        Headwater.Aggregate.Idempotency,
         {Registry, keys: :unique, name: Example.Registry},
         {DynamicSupervisor, name: Example.AggregateSupervisor, strategy: :one_for_one}
       ] ++ ExampleListener.children()

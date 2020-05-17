@@ -17,17 +17,8 @@ defmodule Headwater.Aggregate.IdempotencyTest do
     }
   end
 
-  test "stores idempotency ID" do
+  test "stores idempotency ID", %{aggregate_config: aggregate_config} do
     idempotency_key = "dont-run-me-twice"
-
-    aggregate_config = %AggregateConfig{
-      id: "agg-def",
-      handler: nil,
-      registry: nil,
-      supervisor: nil,
-      event_store: nil,
-      aggregate_state: nil
-    }
 
     assert {:ok, :idempotency_key_available} ==
              Idempotency.key_status(aggregate_config, idempotency_key)

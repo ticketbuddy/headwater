@@ -1,3 +1,5 @@
+{:ok, pid} = GenServer.start_link(Headwater.Aggregate.Idempotency, [:hello])
+
 Mox.defmock(Headwater.Aggregate.HandlerMock, for: Headwater.Aggregate.Handler)
 Mox.defmock(FakeApp.EventHandlerMock, for: Headwater.Listener.EventHandler)
 Mox.defmock(FakeApp.EventStoreMock, for: Headwater.EventStore)

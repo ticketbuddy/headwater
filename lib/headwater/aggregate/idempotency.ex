@@ -15,21 +15,28 @@ defmodule Headwater.Aggregate.Idempotency do
   """
   require Logger
   alias Headwater.Aggregate.AggregateConfig
-  @idempotency_ets_table :headwater_idempotency
+
+  use GenServer
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: :headwater_idempotency_ets)
+  end
+
+  def init(init_state) do
+    :ets.new(:headwater_idempotency, [:set, :public, :named_table, read_concurrency: true])
+
+    {:ok, init_state}
+  end
 
   def store(aggregate_config = %AggregateConfig{}, idempotency_key) do
     Logger.info("Recording idempotency key #{idempotency_key}.")
-
-    ensure_started()
-    :ets.insert(@idempotency_ets_table, {idempotency_key})
+    :ets.insert(:headwater_idempotency, {idempotency_key})
 
     aggregate_config
   end
 
   def key_status(aggregate_config = %AggregateConfig{}, idempotency_key) do
-    ensure_started()
-
-    :ets.lookup(@idempotency_ets_table, idempotency_key)
+    :ets.lookup(:headwater_idempotency, idempotency_key)
     |> case do
       [] ->
         Logger.info("Idempotency key #{idempotency_key} not used.")
@@ -38,16 +45,6 @@ defmodule Headwater.Aggregate.Idempotency do
       [{^idempotency_key}] ->
         Logger.info("Idempotency key #{idempotency_key} used.")
         {:error, :idempotency_key_used}
-    end
-  end
-
-  defp ensure_started do
-    case :ets.whereis(@idempotency_ets_table) do
-      :undefined ->
-        :ets.new(@idempotency_ets_table, [:set, :protected, :named_table, read_concurrency: true])
-
-      _reference ->
-        nil
     end
   end
 end

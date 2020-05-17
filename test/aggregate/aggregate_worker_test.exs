@@ -14,6 +14,8 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
   end
 
   setup do
+    :ets.delete_all_objects(:headwater_idempotency)
+
     {:ok, supervisor_pid} = DynamicSupervisor.start_link(MySupervisor, {:ok, %{}})
 
     case Registry.start_link(keys: :unique, name: AggregateWorkerTesting.Registry) do
@@ -277,6 +279,10 @@ defmodule Headwater.Aggregate.AggregateWorkerTest do
 
       assert {:ok, 34589} == AggregateWorker.current_state(aggregate_config)
       assert {:ok, 1} == AggregateWorker.latest_aggregate_number(aggregate_config)
+
+      assert {:ok, :idempotency_key_available} ==
+               Headwater.Aggregate.Idempotency.key_status(aggregate_config, "idempo-12345"),
+             "Idempotency key should remain available"
     end
   end
 end
