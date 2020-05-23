@@ -26,7 +26,7 @@ defmodule Headwater.MixProject do
   defp deps do
     [
       {:mox, "~> 0.5", only: :test},
-      {:jason, "~> 1.1.2"},
+      {:jason, "~> 1.2"},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
       {:uuid, "~> 1.1"},
